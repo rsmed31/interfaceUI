@@ -30,6 +30,24 @@ h4 {
     height: 100%;
 }
 
+.add-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.add-button:hover {
+    background-color: #0056b3;
+}
+
 /* Media query for responsive layout */
 @media (max-width: 1200px) {
     .graph-container {
