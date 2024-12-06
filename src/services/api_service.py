@@ -2,6 +2,10 @@ import requests
 
 BASE_URL = "http://localhost:8000"
 
+def set_base_url(url):
+    global BASE_URL
+    BASE_URL = url
+
 def fetch_health_status():
     try:
         response = requests.get(f"{BASE_URL}/health")
