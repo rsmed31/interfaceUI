@@ -1,9 +1,12 @@
+/* General styling */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    margin: 0;
+    padding: 0;
 }
 
-h1 {
+h1, h2, h3 {
     color: #333;
 }
 
@@ -31,7 +34,7 @@ h4 {
 }
 
 .add-button {
-    background-color: #007bff;
+    background-color: #28a745;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -45,7 +48,7 @@ h4 {
 }
 
 .add-button:hover {
-    background-color: #0056b3;
+    background-color: #218838;
 }
 
 /* Media query for responsive layout */
@@ -63,4 +66,66 @@ h4 {
     .graph-section {
         flex-direction: column; /* Stack containers vertically */
     }
+}
+
+/* Table styling */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 1em;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.styled-table thead tr {
+    background-color: #009879;
+    color: #ffffff;
+    text-align: left;
+}
+
+.styled-table th,
+.styled-table td {
+    padding: 12px 15px;
+    border: 1px solid #dddddd;
+}
+
+.styled-table tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
+
+.styled-table tbody tr:nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+
+/* Input field styling */
+#ip-input {
+    padding: 10px;
+    font-size: 16px;
+    width: 250px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Switcher styling */
+.dash-checkbox {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+label[for='monitoring-switch'] {
+    margin-right: 10px;
+    font-weight: bold;
+}
+
+/* Average usage styling */
+.average-usage {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.average-usage-text {
+    font-size: 1.2em;
+    color: #333;
+    margin: 10px 0;
 }
