@@ -28,7 +28,7 @@ app.layout = html.Div([
         }
     }),
     html.Div(id='page-content', children=main_dashboard_layout(["localhost:8000"])),
-    dcc.Interval(id='interval-component-main', interval=10*1000, n_intervals=0),
+    dcc.Interval(id='interval-component-main', interval=20*1000, n_intervals=0),
     dcc.Interval(id='interval-component-server', interval=5*1000, n_intervals=0)
 ])
 
@@ -38,6 +38,8 @@ app.layout = html.Div([
     State('ip-store', 'data')
 )
 def display_page(pathname, ip_list):
+    if isinstance(pathname, list):
+        pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         if ip in ip_list:
@@ -143,10 +145,13 @@ def create_table_rows(ip_list, ip_data):
     Output('url', 'pathname', allow_duplicate=True),
     [Input({'type': 'ip-link', 'ip': ALL}, 'n_clicks'),
      Input('ip-switcher', 'value'),
-     Input('back-button', 'n_clicks')],
+     Input('back-button', 'n_clicks'),
+     Input({'type': 'retry-button', 'index': ALL}, 'n_clicks')],
+    State('ip-store', 'data'),
+    State('ip-data-store', 'data'),
     prevent_initial_call=True
 )
-def handle_navigation(ip_link_clicks, selected_ip, back_clicks):
+def handle_navigation(ip_link_clicks, selected_ip, back_clicks, retry_clicks, ip_list, ip_data):
     ctx = callback_context
     if not ctx.triggered:
         raise PreventUpdate
@@ -160,6 +165,21 @@ def handle_navigation(ip_link_clicks, selected_ip, back_clicks):
         return '/'
     elif 'ip-switcher' in triggered_id and selected_ip:
         return f"/server/{selected_ip}"
+    elif 'retry-button' in triggered_id and any(retry_clicks):
+        button_data = eval(triggered_id.split('.')[0])
+        ip = button_data['index']
+        ip_data[ip]['health'] = 'Fetching...'
+        ip_data[ip]['processor_name'] = 'Fetching...'
+        ip_data[ip]['number_of_cores'] = 'Fetching...'
+        ip_data[ip]['frequency'] = 'Fetching...'
+        set_base_url(ip)
+        ip_data[ip]['health'] = fetch_health_status()
+        cpu_core_info = fetch_cpu_core_info()
+        ip_data[ip]['processor_name'] = cpu_core_info.get('processor_name', 'N/A')
+        ip_data[ip]['number_of_cores'] = cpu_core_info.get('number_of_cores', 'N/A')
+        ip_data[ip]['frequency'] = cpu_core_info.get('frequency', 'N/A')
+        rows = create_table_rows(ip_list, ip_data)
+        return no_update, ip_list, ip_data, rows
 
     return no_update
 
@@ -169,6 +189,8 @@ def handle_navigation(ip_link_clicks, selected_ip, back_clicks):
     State('url', 'pathname')
 )
 def update_health_status(n_intervals, pathname):
+    if isinstance(pathname, list):
+        pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
@@ -183,6 +205,8 @@ def update_health_status(n_intervals, pathname):
     [State("url", "pathname")]
 )
 def update_cpu_core_info(n_intervals, pathname):
+    if isinstance(pathname, list):
+        pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
@@ -200,6 +224,8 @@ def update_cpu_core_info(n_intervals, pathname):
     [State("url", "pathname")]
 )
 def update_cpu_graph_data(n_intervals, pathname):
+    if isinstance(pathname, list):
+        pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
@@ -212,6 +238,8 @@ def update_cpu_graph_data(n_intervals, pathname):
     [State("url", "pathname")]
 )
 def update_disk_graph_data(n_intervals, pathname):
+    if isinstance(pathname, list):
+        pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
@@ -224,6 +252,8 @@ def update_disk_graph_data(n_intervals, pathname):
     [State("url", "pathname")]
 )
 def update_ram_graph_data(n_intervals, pathname):
+    if isinstance(pathname, list):
+        pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
