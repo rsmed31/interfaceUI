@@ -1,7 +1,8 @@
+# src/services/api_service.py
 import requests
 
 BASE_URL = "http://localhost:8000"
-
+TIMEOUT = 7  # Timeout in seconds
 
 def set_base_url(url):
     global BASE_URL
@@ -12,7 +13,7 @@ def set_base_url(url):
 
 def fetch_health_status():
     try:
-        response = requests.get(f"{BASE_URL}/health")
+        response = requests.get(f"{BASE_URL}/health", timeout=TIMEOUT)
         if response.status_code == 200:
             return "Reachable"
         return "Not Reachable"
@@ -21,7 +22,7 @@ def fetch_health_status():
 
 def fetch_cpu_data():
     try:
-        response = requests.get(f"{BASE_URL}/metrics/v1/cpu/usage")
+        response = requests.get(f"{BASE_URL}/metrics/v1/cpu/usage", timeout=TIMEOUT)
         if response.status_code == 200:
             return response.json()
     except:
@@ -29,7 +30,7 @@ def fetch_cpu_data():
 
 def fetch_cpu_core_info():
     try:
-        response = requests.get(f"{BASE_URL}/metrics/v1/cpu/core")
+        response = requests.get(f"{BASE_URL}/metrics/v1/cpu/core", timeout=TIMEOUT)
         if response.status_code == 200:
             return response.json()
     except:
@@ -37,7 +38,7 @@ def fetch_cpu_core_info():
 
 def fetch_ram_data():
     try:
-        response = requests.get(f"{BASE_URL}/metrics/v1/ram/usage")
+        response = requests.get(f"{BASE_URL}/metrics/v1/ram/usage", timeout=TIMEOUT)
         if response.status_code == 200:
             return response.json()
     except:
@@ -45,7 +46,7 @@ def fetch_ram_data():
 
 def fetch_disk_data():
     try:
-        response = requests.get(f"{BASE_URL}/metrics/v1/disk/usage")
+        response = requests.get(f"{BASE_URL}/metrics/v1/disk/usage", timeout=TIMEOUT)
         if response.status_code == 200:
             return response.json()
     except:
