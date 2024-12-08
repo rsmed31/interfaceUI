@@ -159,14 +159,17 @@ def handle_navigation(ip_link_clicks, selected_ip, back_clicks, retry_clicks, ip
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     if 'ip-link' in triggered_id and any(ip_link_clicks):
-        button_data = eval(triggered_id.split('.')[0])
+        button_data = eval(triggered_id)
         return f"/server/{button_data['ip']}"
+
     elif 'back-button' in triggered_id and back_clicks:
         return '/'
+
     elif 'ip-switcher' in triggered_id and selected_ip:
         return f"/server/{selected_ip}"
+
     elif 'retry-button' in triggered_id and any(retry_clicks):
-        button_data = eval(triggered_id.split('.')[0])
+        button_data = eval(triggered_id)
         ip = button_data['index']
         ip_data[ip]['health'] = 'Fetching...'
         ip_data[ip]['processor_name'] = 'Fetching...'
@@ -179,9 +182,9 @@ def handle_navigation(ip_link_clicks, selected_ip, back_clicks, retry_clicks, ip
         ip_data[ip]['number_of_cores'] = cpu_core_info.get('number_of_cores', 'N/A')
         ip_data[ip]['frequency'] = cpu_core_info.get('frequency', 'N/A')
         rows = create_table_rows(ip_list, ip_data)
-        return no_update, ip_list, ip_data, rows
+        return no_update
 
-    return no_update
+    raise PreventUpdate
 
 @app.callback(
     Output("health-status", "children"),
