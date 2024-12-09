@@ -2,34 +2,32 @@ from dash import dcc, html
 import plotly.graph_objs as go
 from services.api_service import fetch_disk_data
 
-def update_disk_graph():
-    """Fetch and return Disk usage graph data."""
-    disk_data = fetch_disk_data()
-    if not disk_data:  # Fallback if API response is empty
-        disk_data = {"total": 0, "used": 0, "free": 0}
+# src/components/disk.py
+def update_disk_graph(disk_data):
+    if not disk_data:
+        return go.Figure(layout=go.Layout(title="Disk Usage - No Data Available"))
 
-    # Convert bytes to gigabytes
-    used_gb = round(disk_data["used"] / (1024 ** 3), 2)
-    free_gb = round(disk_data["free"] / (1024 ** 3), 2)
+    # Extract values and convert bytes to GB
+    used_gb = disk_data.get("used", 0) / (1024 ** 3)
+    free_gb = disk_data.get("free", 0) / (1024 ** 3)
 
-    # Create the figure
+    # Prepare figure
     figure = {
         "data": [
             go.Bar(
                 x=["Used", "Free"],
                 y=[used_gb, free_gb],
-                text=[f"{used_gb} GB", f"{free_gb} GB"],
+                text=[f"{used_gb:.2f} GB", f"{free_gb:.2f} GB"],
                 textposition="auto",
                 marker=dict(color=["#636EFA", "#EF553B"]),
             )
         ],
         "layout": go.Layout(
-            title={"text": "Disk Usage", "x": 0.5},
-            xaxis={"title": "Metrics", "showgrid": False},
-            yaxis={"title": "Size (GB)", "showgrid": True},
-            margin={"l": 30, "r": 30, "t": 50, "b": 50},
+            title="Disk Usage",
+            xaxis={"title": "Metrics"},
+            yaxis={"title": "Size (GB)"},
             height=350,
-        ),
+        )
     }
     return figure
 

@@ -1,12 +1,13 @@
 # src/app.py
+import asyncio
 from dash import Dash, dcc, html, no_update, callback_context
 from dash.dependencies import Input, Output, State, ALL
 from dash.exceptions import PreventUpdate
 from components.cpu import update_cpu_graph
 from components.ram import update_ram_graph
 from components.disk import update_disk_graph
-from services.api_service import fetch_health_status, set_base_url, fetch_cpu_core_info, fetch_cpu_data, fetch_ram_data, fetch_disk_data
-from layouts.main_dashboard import main_dashboard_layout
+from services.api_service import fetch_health_status, set_base_url, fetch_cpu_core_info, fetch_cpu_data, fetch_ram_data, fetch_disk_data, fetch_all_data
+from layouts.main_dashboard import main_dashboard_layout, create_table_rows
 from layouts.server_dashboard import server_dashboard_layout
 from layouts.health import health_layout
 
@@ -28,7 +29,7 @@ app.layout = html.Div([
         }
     }),
     html.Div(id='page-content', children=main_dashboard_layout(["localhost:8000"])),
-    dcc.Interval(id='interval-component-main', interval=20*1000, n_intervals=0),
+    dcc.Interval(id='interval-component-main', interval=5*1000, n_intervals=0),
     dcc.Interval(id='interval-component-server', interval=5*1000, n_intervals=0)
 ])
 
@@ -94,8 +95,9 @@ def add_ip_address(n_clicks, n_intervals, ip, ip_list, ip_data):
                 }
             else:
                 set_base_url(ip_addr)
-                ip_data[ip_addr]['health'] = fetch_health_status()
-                cpu_core_info = fetch_cpu_core_info()
+                data = asyncio.run(fetch_all_data())
+                ip_data[ip_addr]['health'] = data.get('health_status', 'Not Reachable')
+                cpu_core_info = data.get('cpu_core_info', {})
                 ip_data[ip_addr]['processor_name'] = cpu_core_info.get('processor_name', 'N/A')
                 ip_data[ip_addr]['number_of_cores'] = cpu_core_info.get('number_of_cores', 'N/A')
                 ip_data[ip_addr]['frequency'] = cpu_core_info.get('frequency', 'N/A')
@@ -105,41 +107,6 @@ def add_ip_address(n_clicks, n_intervals, ip, ip_list, ip_data):
         return no_update, ip_list, ip_data, rows
 
     return no_update, no_update, no_update, no_update
-
-def create_table_rows(ip_list, ip_data):
-    """Helper function to create table rows"""
-    rows = []
-    for ip in ip_list:
-        # Ensure IP exists in ip_data
-        if ip not in ip_data:
-            ip_data[ip] = {
-                'health': 'Fetching...',
-                'processor_name': 'Fetching...',
-                'number_of_cores': 'Fetching...',
-                'frequency': 'Fetching...'
-            }
-
-        data = ip_data[ip]
-        rows.append(html.Tr([
-            html.Td(html.Button(
-                ip,
-                id={'type': 'ip-link', 'ip': ip},
-                n_clicks=0,
-                style={
-                    'background': 'none',
-                    'border': 'none',
-                    'color': 'blue',
-                    'textDecoration': 'underline',
-                    'cursor': 'pointer'
-                }
-            )),
-            html.Td(data['health']),
-            html.Td(data['processor_name']),
-            html.Td(data['number_of_cores']),
-            html.Td(data['frequency']),
-            html.Td(html.Button('Retry', id={'type': 'retry-button', 'index': ip}, n_clicks=0))
-        ]))
-    return rows
 
 @app.callback(
     Output('url', 'pathname', allow_duplicate=True),
@@ -176,8 +143,9 @@ def handle_navigation(ip_link_clicks, selected_ip, back_clicks, retry_clicks, ip
         ip_data[ip]['number_of_cores'] = 'Fetching...'
         ip_data[ip]['frequency'] = 'Fetching...'
         set_base_url(ip)
-        ip_data[ip]['health'] = fetch_health_status()
-        cpu_core_info = fetch_cpu_core_info()
+        data = asyncio.run(fetch_all_data())
+        ip_data[ip]['health'] = data.get('health_status', 'Not Reachable')
+        cpu_core_info = data.get('cpu_core_info', {})
         ip_data[ip]['processor_name'] = cpu_core_info.get('processor_name', 'N/A')
         ip_data[ip]['number_of_cores'] = cpu_core_info.get('number_of_cores', 'N/A')
         ip_data[ip]['frequency'] = cpu_core_info.get('frequency', 'N/A')
@@ -189,31 +157,31 @@ def handle_navigation(ip_link_clicks, selected_ip, back_clicks, retry_clicks, ip
 @app.callback(
     Output("health-status", "children"),
     Input("interval-component-server", "n_intervals"),
-    State('url', 'pathname')
+    State("url", "pathname")
 )
 def update_health_status(n_intervals, pathname):
-    if isinstance(pathname, list):
-        pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
-        health = fetch_health_status()
+        data = asyncio.run(fetch_all_data())
+        health = data.get("health_status", "Not Reachable")
         color = "green" if health == "Reachable" else "red"
         return html.Span(health, style={"color": color, "fontSize": "1.5rem"})
     return no_update
 
 @app.callback(
     Output("cpu-core-info", "children"),
-    [Input("interval-component-server", "n_intervals")],
-    [State("url", "pathname")]
+    Input("interval-component-server", "n_intervals"),
+    State("url", "pathname")
 )
 def update_cpu_core_info(n_intervals, pathname):
-    if isinstance(pathname, list):
-        pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
-        cpu_core_info = fetch_cpu_core_info()
+        data = asyncio.run(fetch_all_data())
+        cpu_core_info = data.get("cpu_core_info", {})
+        if not cpu_core_info:
+            return html.Div("CPU Core Info Not Available", style={"color": "red"})
         return html.Div([
             html.P(f"Processor Name: {cpu_core_info.get('processor_name', 'N/A')}"),
             html.P(f"Number of Cores: {cpu_core_info.get('number_of_cores', 'N/A')}"),
@@ -223,44 +191,43 @@ def update_cpu_core_info(n_intervals, pathname):
 
 @app.callback(
     Output("cpu-graph", "figure"),
-    [Input("interval-component-server", "n_intervals")],
-    [State("url", "pathname")]
+    Input("interval-component-server", "n_intervals"),
+    State("url", "pathname")
 )
 def update_cpu_graph_data(n_intervals, pathname):
-    if isinstance(pathname, list):
-        pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
-        return update_cpu_graph()
+        data = asyncio.run(fetch_all_data())
+        return update_cpu_graph(data.get("cpu_data"))
     return no_update
 
 @app.callback(
     Output("disk-graph", "figure"),
-    [Input("interval-component-server", "n_intervals")],
-    [State("url", "pathname")]
+    Input("interval-component-server", "n_intervals"),
+    State("url", "pathname"),
+    prevent_initial_call=True
 )
 def update_disk_graph_data(n_intervals, pathname):
-    if isinstance(pathname, list):
-        pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
-        return update_disk_graph()
+        data = asyncio.run(fetch_all_data())
+        disk_data = data.get("disk_data", {})
+        return update_disk_graph(disk_data)
     return no_update
 
 @app.callback(
     Output("ram-graph", "figure"),
-    [Input("interval-component-server", "n_intervals")],
-    [State("url", "pathname")]
+    Input("interval-component-server", "n_intervals"),
+    State("url", "pathname")
 )
 def update_ram_graph_data(n_intervals, pathname):
-    if isinstance(pathname, list):
-        pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
-        return update_ram_graph()
+        data = asyncio.run(fetch_all_data())
+        return update_ram_graph(data.get("ram_data"))
     return no_update
 
 @app.callback(
@@ -278,8 +245,9 @@ def update_average_usage(n_intervals, ip_list):
 
     for ip in ip_list:
         set_base_url(ip)
-        cpu_data = fetch_cpu_data()
-        ram_data = fetch_ram_data()
+        data = asyncio.run(fetch_all_data())
+        cpu_data = data.get("cpu_data", [])
+        ram_data = data.get("ram_data", {})
 
         if cpu_data:
             total_cpu_usage += sum(float(core["usage"]) for core in cpu_data) / len(cpu_data)
