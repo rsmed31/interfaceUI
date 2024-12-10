@@ -5,13 +5,13 @@ Dashboard that updates automatically to display data evolving over time. Thus, t
 
 ## Project hierarchy
 
-- [components](https://devops.telecomste.fr/printerfaceadmin/2024-25/group1/printerfaceui/-/tree/main/src/components) : Used plots different fetched metrics.
-- [layouts](https://devops.telecomste.fr/printerfaceadmin/2024-25/group1/printerfaceui/-/tree/main/src/layouts) : Different sections of the page.
+- [components](https://devops.telecomste.fr/printerfaceadmin/2024-25/group1/printerfaceui/-/tree/main/src/components) : contains modular code responsible for generating the visual elements of the dashboard application. Each module focuses on a specific system metric, handling data fetching and visualization. .
+- [layouts](https://devops.telecomste.fr/printerfaceadmin/2024-25/group1/printerfaceui/-/tree/main/src/layouts) : Different pages frontend code.
 - [assets](https://devops.telecomste.fr/printerfaceadmin/2024-25/group1/printerfaceui/-/tree/main/src/assets) : General files to use for display (styling, images....)
 - [services](https://devops.telecomste.fr/printerfaceadmin/2024-25/group1/printerfaceui/-/tree/main/src/services) : Code needed to communicate with the agent api and handle responses.
-- [app.py](https://devops.telecomste.fr/printerfaceadmin/2024-25/group1/printerfaceui/-/blob/main/src/app.py) : Main file that runs the project.
+- [app.py](https://devops.telecomste.fr/printerfaceadmin/2024-25/group1/printerfaceui/-/blob/main/src/app.py) : Main file that runs the project contains callbacks,and main frontend code logic.
 
 
 ## How to use
 
-For now the ui only runs with local agent. first run the agent, then run the app.py and it will work. 
+first run the agent, install requirements.txt using pip install -r requirements.txt then run the app.py and it will work. 
