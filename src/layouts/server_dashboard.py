@@ -3,7 +3,8 @@ from dash import html, dcc
 from components.cpu import cpu_layout
 from components.disk import disk_layout
 from components.ram import ram_layout
-from layouts.health import health_layout  # Import health_layout
+from components.logs import log_layout
+from layouts.health import health_layout
 
 def server_dashboard_layout(ip_list, current_ip):
     return html.Div([
@@ -24,6 +25,9 @@ def server_dashboard_layout(ip_list, current_ip):
 
         # Processor information
         html.Div(id="cpu-core-info", style={"textAlign": "center", "marginBottom": "20px"}),
+
+        # Log data
+        html.Div(id="log-data", className="log-data-container"),
 
         # Graph sections
         html.Div([

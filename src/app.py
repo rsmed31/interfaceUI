@@ -6,9 +6,10 @@ from dash.exceptions import PreventUpdate
 from components.cpu import update_cpu_graph
 from components.ram import update_ram_graph
 from components.disk import update_disk_graph
+from components.logs import log_layout, aggregated_log_layout
 from services.api_service import fetch_health_status, set_base_url, fetch_cpu_core_info, fetch_cpu_data, fetch_ram_data, fetch_disk_data, fetch_all_data
 from layouts.main_dashboard import main_dashboard_layout, create_table_rows
-from layouts.server_dashboard import server_dashboard_layout
+from layouts.server_dashboard import server_dashboard_layout, log_layout
 from layouts.health import health_layout
 
 # Initialize the Dash app
@@ -266,6 +267,45 @@ def update_average_usage(n_intervals, ip_list):
         html.P(f"Average CPU Usage: {avg_cpu_usage:.2f}%", className="average-usage-text"),
         html.P(f"Average RAM Usage: {avg_ram_usage:.2f}%", className="average-usage-text")
     ])
+
+@app.callback(
+    Output("log-data", "children"),
+    Input("interval-component-server", "n_intervals"),
+    State("url", "pathname")
+)
+def update_log_data(n_intervals, pathname):
+    if pathname and pathname.startswith("/server/"):
+        ip = pathname.split("/server/")[1]
+        set_base_url(ip)
+        data = asyncio.run(fetch_all_data())
+        log_data = data.get("log_data", {})
+        return log_layout(log_data)
+    return no_update
+
+@app.callback(
+    Output('aggregated-log-data', 'children'),
+    Input('interval-component-main', 'n_intervals'),
+    State('ip-store', 'data')
+)
+def update_aggregated_log_data(n_intervals, ip_list):
+    if not ip_list:
+        raise PreventUpdate
+
+    aggregated_data = {
+        "failed": 0,
+        "succeed": 0,
+        "total_visitors": 0
+    }
+
+    for ip in ip_list:
+        set_base_url(ip)
+        data = asyncio.run(fetch_all_data())
+        log_data = data.get("log_data", {})
+        aggregated_data["failed"] += log_data.get("failed", 0)
+        aggregated_data["succeed"] += log_data.get("succeed", 0)
+        aggregated_data["total_visitors"] += log_data.get("nbip", 0)
+
+    return aggregated_log_layout(aggregated_data)
 
 if __name__ == "__main__":
     app.run_server(debug=True)
