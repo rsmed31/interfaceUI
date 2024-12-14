@@ -1,6 +1,7 @@
 import plotly.graph_objs as go
 from dash import dcc, html
 from services.api_service import fetch_cpu_data
+from datetime import datetime
 
 def update_cpu_graph(cpu_data):
     if not cpu_data:
@@ -15,6 +16,22 @@ def update_cpu_graph(cpu_data):
             title="CPU Usage",
             xaxis={"title": "Cores"},
             yaxis={"title": "Usage (%)", "range": [0, 100]},
+        )
+    }
+
+def update_historical_cpu_graph(historical_cpu_data):
+    if not historical_cpu_data:
+        return go.Figure()
+    x_data = [datetime.fromtimestamp(data_point["timestamp"]) for data_point in historical_cpu_data]
+    y_data = [data_point["total_usage"] for data_point in historical_cpu_data]
+    return {
+        "data": [
+            go.Scatter(x=x_data, y=y_data, mode="lines+markers", name="Historical CPU Usage")
+        ],
+        "layout": go.Layout(
+            title="Historical CPU Usage",
+            xaxis={"title": "Time"},
+            yaxis={"title": "Total Usage (%)", "range": [0, 100]},
         )
     }
 

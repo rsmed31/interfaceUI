@@ -1,16 +1,17 @@
-# src/app.py
 import asyncio
 from dash import Dash, dcc, html, no_update, callback_context
 from dash.dependencies import Input, Output, State, ALL
 from dash.exceptions import PreventUpdate
-from components.cpu import update_cpu_graph
-from components.ram import update_ram_graph
+from components.cpu import update_cpu_graph, update_historical_cpu_graph
+from components.ram import update_ram_graph, update_historical_ram_graph
 from components.disk import update_disk_graph
 from components.logs import log_layout, aggregated_log_layout
 from services.api_service import fetch_health_status, set_base_url, fetch_cpu_core_info, fetch_cpu_data, fetch_ram_data, fetch_disk_data, fetch_all_data
 from layouts.main_dashboard import main_dashboard_layout, create_table_rows
-from layouts.server_dashboard import server_dashboard_layout, log_layout
+from layouts.server_dashboard import server_dashboard_layout
 from layouts.health import health_layout
+from datetime import datetime
+import plotly.graph_objects as go 
 
 # Initialize the Dash app
 app = Dash(__name__, suppress_callback_exceptions=True)
@@ -29,9 +30,9 @@ app.layout = html.Div([
             'frequency': 'Fetching...'
         }
     }),
+    dcc.Store(id='historical-data-store', data={}),
     html.Div(id='page-content', children=main_dashboard_layout(["localhost:8000"])),
     dcc.Interval(id='interval-component-main', interval=5*1000, n_intervals=0),
-    dcc.Interval(id='interval-component-server', interval=5*1000, n_intervals=0)
 ])
 
 @app.callback(
@@ -192,16 +193,37 @@ def update_cpu_core_info(n_intervals, pathname):
 
 @app.callback(
     Output("cpu-graph", "figure"),
+    Output("ram-graph", "figure"),
+    Output("historical-data-store", "data"),
     Input("interval-component-server", "n_intervals"),
-    State("url", "pathname")
+    State("url", "pathname"),
+    State("historical-data-store", "data")
 )
-def update_cpu_graph_data(n_intervals, pathname):
+def update_graphs_data(n_intervals, pathname, historical_data_store):
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
         data = asyncio.run(fetch_all_data())
-        return update_cpu_graph(data.get("cpu_data"))
-    return no_update
+        
+        # Update CPU data
+        cpu_data = data.get("cpu_data", [])
+        timestamp = datetime.now().timestamp()
+        total_cpu_usage = sum(float(core["usage"]) for core in cpu_data) / len(cpu_data) if cpu_data else 0
+        if ip not in historical_data_store:
+            historical_data_store[ip] = {"cpu": [], "ram": []}
+        historical_data_store[ip]["cpu"].append({"timestamp": timestamp, "total_usage": total_cpu_usage})
+        historical_data_store[ip]["cpu"] = historical_data_store[ip]["cpu"][-100:]  # Keep only the last 100 data points
+        
+        # Update RAM data
+        ram_data = data.get("ram_data", {})
+        used = ram_data.get("used", 0)
+        total = used + ram_data.get("available", 0)
+        total_ram_usage = (used / total) * 100 if total else 0
+        historical_data_store[ip]["ram"].append({"timestamp": timestamp, "total_usage": total_ram_usage})
+        historical_data_store[ip]["ram"] = historical_data_store[ip]["ram"][-100:]  # Keep only the last 100 data points
+        
+        return update_cpu_graph(cpu_data), update_ram_graph(ram_data), historical_data_store
+    return no_update, no_update, historical_data_store
 
 @app.callback(
     Output("disk-graph", "figure"),
@@ -219,17 +241,68 @@ def update_disk_graph_data(n_intervals, pathname):
     return no_update
 
 @app.callback(
-    Output("ram-graph", "figure"),
-    Input("interval-component-server", "n_intervals"),
-    State("url", "pathname")
+    Output("historical-cpu-graph", "figure"),
+    Input("url", "pathname"),
+    State("historical-data-store", "data")
 )
-def update_ram_graph_data(n_intervals, pathname):
+def update_historical_cpu_graph_data(pathname, historical_data_store):
+    if pathname and pathname.startswith("/server/"):
+        ip = pathname.split("/server/")[1]
+        historical_cpu_data = historical_data_store.get(ip, {}).get("cpu", [])
+        return update_historical_cpu_graph(historical_cpu_data)
+    return go.Figure()
+
+@app.callback(
+    Output("historical-ram-graph", "figure"),
+    Input("url", "pathname"),
+    State("historical-data-store", "data")
+)
+def update_historical_ram_graph_data(pathname, historical_data_store):
+    if pathname and pathname.startswith("/server/"):
+        ip = pathname.split("/server/")[1]
+        historical_ram_data = historical_data_store.get(ip, {}).get("ram", [])
+        return update_historical_ram_graph(historical_ram_data)
+    return go.Figure()
+
+@app.callback(
+    Output('log-data', 'children'),
+    Input('interval-component-server', 'n_intervals'),
+    State('url', 'pathname')
+)
+def update_log_data(n_intervals, pathname):
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         set_base_url(ip)
         data = asyncio.run(fetch_all_data())
-        return update_ram_graph(data.get("ram_data"))
+        log_data = data.get("log_data", {})
+        return log_layout(log_data)
     return no_update
+
+@app.callback(
+    Output('aggregated-log-data', 'children'),
+    Input('interval-component-main', 'n_intervals'),
+    State('ip-store', 'data')
+)
+def update_aggregated_log_data(n_intervals, ip_list):
+    if not ip_list:
+        raise PreventUpdate
+
+    aggregated_data = {
+        "failed": 0,
+        "succeed": 0,
+        "total_visitors": 0
+    }
+
+    for ip in ip_list:
+        set_base_url(ip)
+        data = asyncio.run(fetch_all_data())
+        log_data = data.get("log_data", {})
+
+        aggregated_data["failed"] += log_data.get("failed", 0)
+        aggregated_data["succeed"] += log_data.get("succeed", 0)
+        aggregated_data["total_visitors"] += sum(log_data.get("nbwebsites", {}).values())
+
+    return aggregated_log_layout(aggregated_data)
 
 @app.callback(
     Output('average-usage', 'children'),
@@ -267,45 +340,6 @@ def update_average_usage(n_intervals, ip_list):
         html.P(f"Average CPU Usage: {avg_cpu_usage:.2f}%", className="average-usage-text"),
         html.P(f"Average RAM Usage: {avg_ram_usage:.2f}%", className="average-usage-text")
     ])
-
-@app.callback(
-    Output("log-data", "children"),
-    Input("interval-component-server", "n_intervals"),
-    State("url", "pathname")
-)
-def update_log_data(n_intervals, pathname):
-    if pathname and pathname.startswith("/server/"):
-        ip = pathname.split("/server/")[1]
-        set_base_url(ip)
-        data = asyncio.run(fetch_all_data())
-        log_data = data.get("log_data", {})
-        return log_layout(log_data)
-    return no_update
-
-@app.callback(
-    Output('aggregated-log-data', 'children'),
-    Input('interval-component-main', 'n_intervals'),
-    State('ip-store', 'data')
-)
-def update_aggregated_log_data(n_intervals, ip_list):
-    if not ip_list:
-        raise PreventUpdate
-
-    aggregated_data = {
-        "failed": 0,
-        "succeed": 0,
-        "total_visitors": 0
-    }
-
-    for ip in ip_list:
-        set_base_url(ip)
-        data = asyncio.run(fetch_all_data())
-        log_data = data.get("log_data", {})
-        aggregated_data["failed"] += log_data.get("failed", 0)
-        aggregated_data["succeed"] += log_data.get("succeed", 0)
-        aggregated_data["total_visitors"] += log_data.get("nbip", 0)
-
-    return aggregated_log_layout(aggregated_data)
 
 if __name__ == "__main__":
     app.run_server(debug=True)

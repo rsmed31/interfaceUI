@@ -1,4 +1,3 @@
-# src/layouts/main_dashboard.py
 from dash import html, dcc
 from components.logs import aggregated_log_layout
 
