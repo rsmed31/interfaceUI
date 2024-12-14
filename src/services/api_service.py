@@ -80,6 +80,7 @@ async def fetch_all_data():
             fetch_cpu_core_info(session),
             fetch_ram_data(session),
             fetch_disk_data(session),
+            fetch_log_data(session),
             return_exceptions=True
         )
         return {
@@ -87,5 +88,18 @@ async def fetch_all_data():
             "cpu_data": results[1],
             "cpu_core_info": results[2],
             "ram_data": results[3],
-            "disk_data": results[4]
+            "disk_data": results[4],
+            "log_data": results[5]
         }
+
+async def fetch_log_data(session):
+    try:
+        async with session.get(f"{BASE_URL}/metrics/v1/log/logs", timeout=TIMEOUT) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                return {}
+    except asyncio.TimeoutError:
+        return {}
+    except Exception:
+        return {}

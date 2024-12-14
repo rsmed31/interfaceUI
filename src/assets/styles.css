@@ -131,3 +131,25 @@ label[for='monitoring-switch'] {
     color: #333;
     margin: 10px 0;
 }
+
+.log-data-container {
+    text-align: center;
+    margin: 20px auto;
+    width: fit-content;
+}
+
+.log-data-container div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    margin: 0 auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.log-data-container p {
+    margin-right: 15px;
+}

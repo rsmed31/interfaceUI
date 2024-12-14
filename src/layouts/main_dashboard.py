@@ -1,5 +1,6 @@
 # src/layouts/main_dashboard.py
 from dash import html, dcc
+from components.logs import aggregated_log_layout
 
 def main_dashboard_layout(ip_list):
     # Create initial table rows
@@ -38,6 +39,9 @@ def main_dashboard_layout(ip_list):
             ]),
             html.Tbody(id="server-table-body", children=initial_rows)
         ], className="styled-table"),
+
+        # Aggregated log data
+        html.Div(id='aggregated-log-data'),
 
         # Average CPU and RAM usage
         html.Div([
