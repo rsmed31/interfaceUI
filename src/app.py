@@ -5,7 +5,7 @@ from dash.exceptions import PreventUpdate
 from components.cpu import update_cpu_graph, update_historical_cpu_graph
 from components.ram import update_ram_graph, update_historical_ram_graph
 from components.disk import update_disk_graph
-from components.logs import log_layout, aggregated_log_layout
+from components.logs import log_layout, aggregated_log_layout, recent_logs_layout
 from services.api_service import fetch_health_status, set_base_url, fetch_cpu_core_info, fetch_cpu_data, fetch_ram_data, fetch_disk_data, fetch_all_data
 from layouts.main_dashboard import main_dashboard_layout, create_table_rows
 from layouts.server_dashboard import server_dashboard_layout
@@ -340,6 +340,22 @@ def update_average_usage(n_intervals, ip_list):
         html.P(f"Average CPU Usage: {avg_cpu_usage:.2f}%", className="average-usage-text"),
         html.P(f"Average RAM Usage: {avg_ram_usage:.2f}%", className="average-usage-text")
     ])
+
+@app.callback(
+    Output('recent-logs', 'children'),
+    Input('interval-component-server', 'n_intervals'),
+    State('url', 'pathname')
+)
+def update_recent_logs(n_intervals, pathname):
+    if pathname and pathname.startswith("/server/"):
+        ip = pathname.split("/server/")[1]
+        set_base_url(ip)
+        data = asyncio.run(fetch_all_data())
+        recent_logs = data.get("recent_logs", [])
+        return recent_logs_layout(recent_logs)
+    return no_update
+
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)
