@@ -71,3 +71,26 @@ def aggregated_log_layout(aggregated_data):
         "textAlign": "center",
         "margin": "20px auto"
     })
+
+def recent_logs_layout(recent_logs):
+    if not recent_logs:
+        return html.Div("No recent logs available", style={"color": "red"})
+
+    log_items = []
+    for log in recent_logs:
+        color = "green" if log["status"] == "200" else "red"
+        log_items.append(html.Div([
+            html.P(f"IP: {log['ip']}", style={"margin": "0"}),
+            html.P(f"Time: {log['time']}", style={"margin": "0"}),
+            html.P(f"Method: {log['request_method']}", style={"margin": "0"}),
+            html.P(f"URL: {log['request_url']}", style={"margin": "0"}),
+            html.P(f"Status: {log['status']}", style={"margin": "0", "color": color}),
+        ], style={
+            "border": f"1px solid {color}",
+            "borderRadius": "5px",
+            "padding": "10px",
+            "marginBottom": "10px",
+            "backgroundColor": "#f9f9f9"
+        }))
+
+    return html.Div(log_items, style={"marginTop": "20px"})
