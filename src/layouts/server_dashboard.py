@@ -56,6 +56,9 @@ def server_dashboard_layout(ip_list, current_ip):
             "marginTop": "20px"
         }),
 
+        # Recent Logs section
+        html.Div(id='recent-logs', style={"marginTop": "20px"}),
+
         # Interval Component Moved Here
         dcc.Interval(id='interval-component-server', interval=5*1000, n_intervals=0),
 

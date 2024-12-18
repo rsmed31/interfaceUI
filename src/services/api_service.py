@@ -72,6 +72,18 @@ async def fetch_disk_data(session):
     except Exception:
         return {}
 
+async def fetch_recent_logs(session):
+    try:
+        async with session.get(f"{BASE_URL}/metrics/v1/log/logs/recent", timeout=TIMEOUT) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                return []
+    except asyncio.TimeoutError:
+        return []
+    except Exception:
+        return []
+
 async def fetch_all_data():
     async with aiohttp.ClientSession() as session:
         results = await asyncio.gather(
@@ -81,6 +93,7 @@ async def fetch_all_data():
             fetch_ram_data(session),
             fetch_disk_data(session),
             fetch_log_data(session),
+            fetch_recent_logs(session),
             return_exceptions=True
         )
         return {
@@ -89,7 +102,8 @@ async def fetch_all_data():
             "cpu_core_info": results[2],
             "ram_data": results[3],
             "disk_data": results[4],
-            "log_data": results[5]
+            "log_data": results[5],
+            "recent_logs": results[6]
         }
 
 async def fetch_log_data(session):
@@ -103,3 +117,4 @@ async def fetch_log_data(session):
         return {}
     except Exception:
         return {}
+
