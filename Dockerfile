@@ -1,5 +1,5 @@
 # Use a minimal Python base image
-FROM python:3.12-slim
+FROM python:3.12-alpine
 
 # Set working directory inside the container
 WORKDIR /app
@@ -11,7 +11,7 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose the port for the app
-EXPOSE 8000
+EXPOSE 8050
 
 # Run the application
 CMD ["python", "src/app.py"]
