@@ -356,6 +356,5 @@ def update_recent_logs(n_intervals, pathname):
     return no_update
 
 
-
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=True, host="0.0.0.0")
