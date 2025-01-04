@@ -12,6 +12,8 @@ from layouts.server_dashboard import server_dashboard_layout
 from layouts.health import health_layout
 from datetime import datetime
 import plotly.graph_objects as go 
+from layouts.map import map_layout
+from services.api_service import fetch_geolocation
 
 # Initialize the Dash app
 app = Dash(__name__, suppress_callback_exceptions=True)
@@ -31,6 +33,7 @@ app.layout = html.Div([
         }
     }),
     dcc.Store(id='historical-data-store', data={}),
+    dcc.Store(id='ip-locations-store', data={}),
     html.Div(id='page-content', children=main_dashboard_layout(["localhost:8000"])),
     dcc.Interval(id='interval-component-main', interval=5*1000, n_intervals=0),
 ])
@@ -228,8 +231,7 @@ def update_graphs_data(n_intervals, pathname, historical_data_store):
 @app.callback(
     Output("disk-graph", "figure"),
     Input("interval-component-server", "n_intervals"),
-    State("url", "pathname"),
-    prevent_initial_call=True
+    State("url", "pathname")
 )
 def update_disk_graph_data(n_intervals, pathname):
     if pathname and pathname.startswith("/server/"):
@@ -238,7 +240,7 @@ def update_disk_graph_data(n_intervals, pathname):
         data = asyncio.run(fetch_all_data())
         disk_data = data.get("disk_data", {})
         return update_disk_graph(disk_data)
-    return no_update
+    return go.Figure()
 
 @app.callback(
     Output("historical-cpu-graph", "figure"),
@@ -355,6 +357,49 @@ def update_recent_logs(n_intervals, pathname):
         return recent_logs_layout(recent_logs)
     return no_update
 
+@app.callback(
+    Output('ip-map', 'children'),
+    Input('interval-component-server', 'n_intervals'),
+    State('url', 'pathname'),
+    State('ip-locations-store', 'data')
+)
+def update_ip_map(n_intervals, pathname, ip_locations_store):
+    if not pathname or not pathname.startswith("/server/"):
+        return no_update
+
+    try:
+        ip = pathname.split("/server/")[1]
+        set_base_url(ip)
+        data = asyncio.run(fetch_all_data())
+        ip_visits = data.get("log_data", {}).get("ip_visits", {})
+
+        if not ip_visits:
+            return html.Div([
+                html.H4("IP Location Map", style={"textAlign": "center", "color": "gray"}),
+                html.P("No IP visit data available", 
+                      style={"textAlign": "center", "color": "gray"})
+            ])
+
+        # Only fetch locations for new IPs
+        new_locations = False
+        for visit_ip in ip_visits.keys():
+            if visit_ip not in ip_locations_store:
+                location = asyncio.run(fetch_geolocation(visit_ip))
+                if location:
+                    ip_locations_store[visit_ip] = location
+                    new_locations = True
+
+        # Only update if we have new locations
+        if new_locations or not ip_locations_store:
+            return map_layout(ip_locations_store)
+        return no_update
+
+    except Exception as e:
+        return html.Div([
+            html.H4("IP Location Map", style={"textAlign": "center", "color": "red"}),
+            html.P(f"Error: {str(e)}", 
+                  style={"textAlign": "center", "color": "red"})
+        ])
 
 if __name__ == "__main__":
     app.run_server(debug=True, host="0.0.0.0")

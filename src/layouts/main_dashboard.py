@@ -2,65 +2,58 @@ from dash import html, dcc
 from components.logs import aggregated_log_layout
 
 def main_dashboard_layout(ip_list):
-    # Create initial table rows
-    initial_rows = create_table_rows(ip_list, {})
-
     return html.Div([
-        html.H1("Server Monitoring Dashboard", style={"textAlign": "center"}),
+        html.H1("Server Monitoring Dashboard", className="text-center mb-20"),
 
-        # Input field and add button
+        # Input container
         html.Div([
             dcc.Input(
-                id='ip-input',  # Ensure this ID matches the callback
+                id='ip-input',
                 type='text',
                 placeholder='Enter IP Address',
-                style={'marginRight': '10px'}
+                className='ip-input'
             ),
             html.Button(
                 'Add',
-                id='add-button',  # Ensure this ID matches the callback
+                id='add-button',
                 n_clicks=0,
                 className='add-button'
             )
-        ], style={"textAlign": "center", "marginBottom": "20px"}),
+        ], className="text-center mb-20"),
 
-        # Server table
-        html.Table([
-            html.Thead([
-                html.Tr([
-                    html.Th("IP Address"),
-                    html.Th("Health"),
-                    html.Th("Processor Name"),
-                    html.Th("Number of Cores"),
-                    html.Th("Frequency (MHz)"),
-                    html.Th("Actions")
-                ])
-            ]),
-            html.Tbody(id="server-table-body", children=initial_rows)
-        ], className="styled-table"),
-
-        # Aggregated log data
-        html.Div(id='aggregated-log-data'),
-
-        # Average CPU and RAM usage
+        # Server table in card container
         html.Div([
-            html.H3("Average CPU and RAM Usage", style={"textAlign": "center"}),
-            html.Div(id="average-usage", className="average-usage")
-        ]),
+            html.Table([
+                html.Thead([
+                    html.Tr([
+                        html.Th("IP Address"),
+                        html.Th("Health"),
+                        html.Th("Processor Name"),
+                        html.Th("Number of Cores"),
+                        html.Th("Frequency (MHz)"),
+                        html.Th("Actions")
+                    ])
+                ]),
+                html.Tbody(id="server-table-body", children=create_table_rows(ip_list, {}))
+            ], className="styled-table")
+        ], className="card"),
 
-        # Hidden elements for callbacks
-        dcc.Dropdown(
-            id='ip-switcher',
-            options=[{'label': ip, 'value': ip} for ip in ip_list],
-            style={'display': 'none'}
-        ),
-        html.Button(
-            'Back to Dashboard',
-            id='back-button',
-            n_clicks=0,
-            style={'display': 'none'}
-        )
-    ])
+        # Stats cards
+        html.Div([
+            # Aggregated log data
+            html.Div(id='aggregated-log-data', className="card"),
+            
+            # Average usage
+            html.Div([
+                html.H3("Average Usage", className="text-center mb-20"),
+                html.Div(id="average-usage", className="average-usage")
+            ], className="card")
+        ], className="grid-container"),
+
+        # Hidden elements
+        dcc.Dropdown(id='ip-switcher', style={'display': 'none'}),
+        html.Button(id='back-button', style={'display': 'none'})
+    ], className="dashboard-container")
 
 def create_table_rows(ip_list, ip_data):
     """Helper function to create table rows"""

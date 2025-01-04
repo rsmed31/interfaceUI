@@ -1,9 +1,19 @@
 # src/services/api_service.py
 import aiohttp
 import asyncio
+import geopy
+from typing import Dict, Optional
+import ipinfo
+
+# Cache for storing IP locations
+ip_location_cache: Dict[str, Optional[dict]] = {}
 
 BASE_URL = "http://localhost:8000"
 TIMEOUT = 2  # Reduced timeout for quicker detection
+
+# Initialize ipinfo handler
+IPINFO_TOKEN = '9a2815cabdac3d'  # Replace with your token
+handler = ipinfo.getHandler(IPINFO_TOKEN)
 
 def set_base_url(url):
     global BASE_URL
@@ -118,3 +128,32 @@ async def fetch_log_data(session):
     except Exception:
         return {}
 
+async def fetch_geolocation(ip: str) -> Optional[dict]:
+    # Return cached result if available
+    if ip in ip_location_cache:
+        return ip_location_cache[ip]
+
+    # For private IP addresses, return None immediately
+    if (ip.startswith('192.168.') or 
+        ip.startswith('10.') or 
+        ip.startswith('172.16.')):
+        ip_location_cache[ip] = None
+        return None
+
+    try:
+        details = handler.getDetails(ip)
+        if details.latitude and details.longitude:
+            result = {
+                "latitude": float(details.latitude),
+                "longitude": float(details.longitude)
+            }
+            ip_location_cache[ip] = result
+            print(f"Geolocation for IP {ip}: {result}")
+            return result
+        ip_location_cache[ip] = None
+        print(f"No geolocation found for IP {ip}")
+        return None
+    except Exception as e:
+        print(f"Error fetching geolocation for IP {ip}: {e}")
+        ip_location_cache[ip] = None
+        return None

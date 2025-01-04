@@ -1,59 +1,36 @@
 from dash import dcc, html
 import plotly.graph_objs as go
-from services.api_service import fetch_disk_data
 
-# src/components/disk.py
 def update_disk_graph(disk_data):
     if not disk_data:
-        return go.Figure(layout=go.Layout(title="Disk Usage - No Data Available"))
+        return go.Figure()
 
-    # Extract values and convert bytes to GB
     used_gb = disk_data.get("used", 0) / (1024 ** 3)
     free_gb = disk_data.get("free", 0) / (1024 ** 3)
+    total_gb = used_gb + free_gb
+    used_percentage = (used_gb / total_gb * 100) if total_gb > 0 else 0
 
-    # Prepare figure
-    figure = {
+    return {
         "data": [
-            go.Bar(
-                x=["Used", "Free"],
-                y=[used_gb, free_gb],
-                text=[f"{used_gb:.2f} GB", f"{free_gb:.2f} GB"],
-                textposition="auto",
-                marker=dict(color=["#636EFA", "#EF553B"]),
+            go.Pie(
+                values=[used_gb, free_gb],
+                labels=["Used", "Free"],
+                hole=.3,
+                text=[f"{used_percentage:.1f}%", f"{(100-used_percentage):.1f}%"],
+                textinfo="text",
+                marker=dict(colors=["#636EFA", "#EF553B"])
             )
         ],
         "layout": go.Layout(
-            title="Disk Usage",
-            xaxis={"title": "Metrics"},
-            yaxis={"title": "Size (GB)"},
-            height=350,
+            showlegend=True,
+            legend=dict(orientation="h", y=-0.1),
+            margin=dict(l=20, r=20, t=20, b=30),
+            height=300
         )
     }
-    return figure
 
 def disk_layout():
-    """Return layout for Disk section."""
-    return html.Div(
-        [
-            html.H4(
-                "Disk Usage",
-                style={
-                    "textAlign": "center",
-                    "color": "blue",
-                    "marginBottom": "10px",
-                },
-            ),
-            dcc.Graph(
-                id="disk-graph",
-                className="dccGraph",  # Add class for consistent styling
-            ),
-        ],
-        className="graph-container",
-        style={
-            "flex": 1,
-            "padding": "10px",
-            "boxShadow": "0px 4px 6px rgba(0, 0, 0, 0.1)",
-            "borderRadius": "10px",
-            "height": "100%",  # Ensure the container takes full height
-        },
-    )
+    return html.Div([
+        html.H4("Disk Usage", className="graph-title"),
+        dcc.Graph(id="disk-graph", className="graph-content")
+    ])
