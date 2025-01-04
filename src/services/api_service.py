@@ -127,6 +127,41 @@ async def fetch_log_data(session):
         return {}
     except Exception:
         return {}
+async def fetch_connected_users(session):
+    try:
+        async with session.get(f"{BASE_URL}/metrics/v1/users/connected", timeout=TIMEOUT) as response:
+            if response.status == 200:
+                data = await response.json()
+                return data[0] if data else "No users"
+            return "Not available"
+    except Exception:
+        return "Not available"
+
+async def fetch_all_data():
+    async with aiohttp.ClientSession() as session:
+        tasks = [
+            fetch_health_status(session),
+            fetch_cpu_data(session),
+            fetch_cpu_core_info(session),
+            fetch_ram_data(session),
+            fetch_disk_data(session),
+            fetch_log_data(session),
+            fetch_recent_logs(session),
+            fetch_connected_users(session)
+        ]
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        return {
+            "health_status": results[0] if not isinstance(results[0], Exception) else "Not Reachable",
+            "cpu_data": results[1] if not isinstance(results[1], Exception) else [],
+            "cpu_core_info": results[2] if not isinstance(results[2], Exception) else {},
+            "ram_data": results[3] if not isinstance(results[3], Exception) else {},
+            "disk_data": results[4] if not isinstance(results[4], Exception) else {},
+            "log_data": results[5] if not isinstance(results[5], Exception) else {},
+            "recent_logs": results[6] if not isinstance(results[6], Exception) else [],
+            "last_connected": results[7] if not isinstance(results[7], Exception) else "N/A"
+        }
 
 async def fetch_geolocation(ip: str) -> Optional[dict]:
     # Return cached result if available

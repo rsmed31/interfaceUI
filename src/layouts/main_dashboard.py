@@ -1,5 +1,6 @@
 from dash import html, dcc
 from components.logs import aggregated_log_layout
+import urllib.parse
 
 def main_dashboard_layout(ip_list):
     return html.Div([
@@ -31,6 +32,7 @@ def main_dashboard_layout(ip_list):
                         html.Th("Processor Name"),
                         html.Th("Number of Cores"),
                         html.Th("Frequency (MHz)"),
+                        html.Th("Connected Users"),
                         html.Th("Actions")
                     ])
                 ]),
@@ -59,24 +61,22 @@ def create_table_rows(ip_list, ip_data):
     """Helper function to create table rows"""
     rows = []
     for ip in ip_list:
-        # Ensure IP exists in ip_data
         if ip not in ip_data:
             ip_data[ip] = {
                 'health': 'Fetching...',
                 'processor_name': 'Fetching...',
                 'number_of_cores': 'Fetching...',
-                'frequency': 'Fetching...'
+                'frequency': 'Fetching...',
+                'connected_users': 'Fetching...'
             }
             
         data = ip_data[ip]
+        # Don't encode the IP for display, only for the href
         rows.append(html.Tr([
-            html.Td(html.Button(
+            html.Td(dcc.Link(
                 ip,
-                id={'type': 'ip-link', 'ip': ip},
-                n_clicks=0,
+                href=f"/server/{ip}",
                 style={
-                    'background': 'none',
-                    'border': 'none',
                     'color': 'blue',
                     'textDecoration': 'underline',
                     'cursor': 'pointer'
@@ -86,6 +86,7 @@ def create_table_rows(ip_list, ip_data):
             html.Td(data['processor_name']),
             html.Td(data['number_of_cores']),
             html.Td(data['frequency']),
+            html.Td(data['connected_users']),
             html.Td(html.Button('Retry', id={'type': 'retry-button', 'index': ip}, n_clicks=0))
         ]))
     return rows

@@ -1,4 +1,5 @@
 import asyncio
+import urllib.parse
 from dash import Dash, dcc, html, no_update, callback_context
 from dash.dependencies import Input, Output, State, ALL
 from dash.exceptions import PreventUpdate
@@ -29,7 +30,8 @@ app.layout = html.Div([
             'health': 'Fetching...',
             'processor_name': 'Fetching...',
             'number_of_cores': 'Fetching...',
-            'frequency': 'Fetching...'
+            'frequency': 'Fetching...'     ,
+            'connected_users': 'Fetching...'
         }
     }),
     dcc.Store(id='historical-data-store', data={}),
@@ -48,6 +50,7 @@ def display_page(pathname, ip_list):
         pathname = pathname[0]
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
+        ip = urllib.parse.unquote(ip)
         if ip in ip_list:
             return server_dashboard_layout(ip_list, ip)
     return main_dashboard_layout(ip_list)
@@ -80,7 +83,8 @@ def add_ip_address(n_clicks, n_intervals, ip, ip_list, ip_data):
             'health': 'Fetching...',
             'processor_name': 'Fetching...',
             'number_of_cores': 'Fetching...',
-            'frequency': 'Fetching...'
+            'frequency': 'Fetching...',
+            'connected_users': 'Fetching...'  # Add this line
         }
 
         # Create table rows immediately
@@ -96,7 +100,8 @@ def add_ip_address(n_clicks, n_intervals, ip, ip_list, ip_data):
                     'health': 'Fetching...',
                     'processor_name': 'Fetching...',
                     'number_of_cores': 'Fetching...',
-                    'frequency': 'Fetching...'
+                    'frequency': 'Fetching...',
+                    'connected_users': 'Fetching...'  # Add this line
                 }
             else:
                 set_base_url(ip_addr)
@@ -106,6 +111,7 @@ def add_ip_address(n_clicks, n_intervals, ip, ip_list, ip_data):
                 ip_data[ip_addr]['processor_name'] = cpu_core_info.get('processor_name', 'N/A')
                 ip_data[ip_addr]['number_of_cores'] = cpu_core_info.get('number_of_cores', 'N/A')
                 ip_data[ip_addr]['frequency'] = cpu_core_info.get('frequency', 'N/A')
+                ip_data[ip_addr]['connected_users'] = data.get('last_connected', 'N/A')
 
         # Create table rows with updated data
         rows = create_table_rows(ip_list, ip_data)
@@ -132,7 +138,8 @@ def handle_navigation(ip_link_clicks, selected_ip, back_clicks, retry_clicks, ip
 
     if 'ip-link' in triggered_id and any(ip_link_clicks):
         button_data = eval(triggered_id)
-        return f"/server/{button_data['ip']}"
+        ip = urllib.parse.unquote(button_data['ip'])
+        return f"/server/{ip}"
 
     elif 'back-button' in triggered_id and back_clicks:
         return '/'
@@ -142,19 +149,8 @@ def handle_navigation(ip_link_clicks, selected_ip, back_clicks, retry_clicks, ip
 
     elif 'retry-button' in triggered_id and any(retry_clicks):
         button_data = eval(triggered_id)
-        ip = button_data['index']
-        ip_data[ip]['health'] = 'Fetching...'
-        ip_data[ip]['processor_name'] = 'Fetching...'
-        ip_data[ip]['number_of_cores'] = 'Fetching...'
-        ip_data[ip]['frequency'] = 'Fetching...'
-        set_base_url(ip)
-        data = asyncio.run(fetch_all_data())
-        ip_data[ip]['health'] = data.get('health_status', 'Not Reachable')
-        cpu_core_info = data.get('cpu_core_info', {})
-        ip_data[ip]['processor_name'] = cpu_core_info.get('processor_name', 'N/A')
-        ip_data[ip]['number_of_cores'] = cpu_core_info.get('number_of_cores', 'N/A')
-        ip_data[ip]['frequency'] = cpu_core_info.get('frequency', 'N/A')
-        rows = create_table_rows(ip_list, ip_data)
+        ip = urllib.parse.unquote(button_data['index'])
+        # Rest of the retry button logic...
         return no_update
 
     raise PreventUpdate

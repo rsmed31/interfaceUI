@@ -32,14 +32,14 @@ def server_dashboard_layout(ip_list, current_ip):
             html.Div(id="log-data", className="card")
         ], className="grid-container"),
 
-        # Graphs section
+        # Realtime graphs section
         html.Div([
             html.Div(cpu_layout(), className="graph-container"),
-            html.Div(disk_layout(), className="graph-container"),
-            html.Div(ram_layout(), className="graph-container")
+            html.Div(ram_layout(), className="graph-container"),
+            html.Div(disk_layout(), className="graph-container")
         ], className="graph-section"),
 
-        # Historical graphs
+        # Historical graphs section
         html.Div([
             html.Div([
                 html.H4("Historical CPU Usage", className="graph-title"),
@@ -49,7 +49,7 @@ def server_dashboard_layout(ip_list, current_ip):
                 html.H4("Historical RAM Usage", className="graph-title"),
                 dcc.Graph(id="historical-ram-graph", className="graph-content")
             ], className="graph-container")
-        ], className="graph-section"),
+        ], className="historical-graph-section"),
 
         # Map and logs
         html.Div([
