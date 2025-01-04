@@ -1,7 +1,6 @@
 # src/services/api_service.py
 import aiohttp
 import asyncio
-import geopy
 from typing import Dict, Optional
 import ipinfo
 
