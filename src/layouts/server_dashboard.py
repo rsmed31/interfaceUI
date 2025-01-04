@@ -4,11 +4,12 @@ from components.disk import disk_layout
 from components.ram import ram_layout, update_historical_ram_graph
 from components.logs import log_layout  
 from layouts.health import health_layout  
+from layouts.map import map_layout
 
 def server_dashboard_layout(ip_list, current_ip):
     return html.Div([
-        html.H1(f"Server Dashboard: {current_ip}", style={"textAlign": "center"}),
-
+        html.H1(f"Server Dashboard: {current_ip}", className="text-center mb-20"),
+        
         html.Div([
             html.Label('Switch Server:'),
             dcc.Dropdown(
@@ -17,79 +18,53 @@ def server_dashboard_layout(ip_list, current_ip):
                 value=current_ip,
                 clearable=False
             )
-        ], style={"textAlign": "center", "marginBottom": "20px"}),
+        ], className="card mb-20"),
 
-        # Health status
-        health_layout(),
+        # Main content grid
+        html.Div([
+            # Health and CPU info
+            html.Div([
+                health_layout(),
+                html.Div(id="cpu-core-info", className="mt-20")
+            ], className="card"),
 
-        # Processor information
-        html.Div(id="cpu-core-info", style={"textAlign": "center", "marginBottom": "20px"}),
+            # Log data
+            html.Div(id="log-data", className="card")
+        ], className="grid-container"),
 
-        # Log data
-        html.Div(id="log-data", className="log-data-container"),
-
-        # Real-time Graph sections
+        # Graphs section
         html.Div([
             html.Div(cpu_layout(), className="graph-container"),
             html.Div(disk_layout(), className="graph-container"),
-            html.Div(ram_layout(), className="graph-container"),
-        ], className="graph-section", style={
-            "display": "flex",
-            "justifyContent": "space-around",
-            "gap": "20px"
-        }),
+            html.Div(ram_layout(), className="graph-container")
+        ], className="graph-section"),
 
-        # Historical Graph sections
+        # Historical graphs
         html.Div([
             html.Div([
-                html.H4("Historical CPU Usage", style={"textAlign": "center"}),
-                dcc.Graph(id="historical-cpu-graph")
+                html.H4("Historical CPU Usage", className="graph-title"),
+                dcc.Graph(id="historical-cpu-graph", className="graph-content")
             ], className="graph-container"),
             html.Div([
-                html.H4("Historical RAM Usage", style={"textAlign": "center"}),
-                dcc.Graph(id="historical-ram-graph")
-            ], className="graph-container"),
-        ], className="graph-section", style={
-            "display": "flex",
-            "justifyContent": "space-around",
-            "gap": "20px",
-            "marginTop": "20px"
-        }),
+                html.H4("Historical RAM Usage", className="graph-title"),
+                dcc.Graph(id="historical-ram-graph", className="graph-content")
+            ], className="graph-container")
+        ], className="graph-section"),
 
-        # Recent Logs section
-        html.Div(id='recent-logs', style={"marginTop": "20px"}),
+        # Map and logs
+        html.Div([
+            html.Div(id='ip-map'),
+            html.Div(id='recent-logs', className="card mt-20")
+        ], className="grid-container"),
 
-        # Interval Component Moved Here
-        dcc.Interval(id='interval-component-server', interval=5*1000, n_intervals=0),
-
-        # Hidden add button
-        html.Button(
-            'Add',
-            id='add-button',
-            n_clicks=0,
-            style={'display': 'none'}
-        ),
-
-        # Hidden ip-input
-        dcc.Input(
-            id='ip-input',
-            type='text',
-            style={'display': 'none'}
-        ),
-
-        # Hidden server-table-body
-        html.Div(
-            id='server-table-body',
-            style={'display': 'none'}
-        ),
+        # Hidden elements and intervals
+        dcc.Interval(id='interval-component-server', interval=5*1000),
+        html.Button('Add', id='add-button', style={'display': 'none'}),
+        dcc.Input(id='ip-input', style={'display': 'none'}),
+        html.Div(id='server-table-body', style={'display': 'none'}),
 
         # Back button
         html.Div([
-            html.Button(
-                "Back to Dashboard",
-                id="back-button",
-                n_clicks=0,
-                className="add-button"
-            )
-        ], style={"textAlign": "center", "marginTop": "20px"})
-    ])
+            html.Button("Back to Dashboard", id="back-button", className="add-button")
+        ], className="text-center mt-20")
+    ], className="dashboard-container")

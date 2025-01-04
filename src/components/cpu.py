@@ -13,11 +13,15 @@ def update_cpu_graph(cpu_data):
             go.Scatter(x=x_data, y=y_data, mode="lines+markers", name="CPU Usage")
         ],
         "layout": go.Layout(
-            title="CPU Usage",
+            showlegend=True,
+            legend=dict(orientation="h", y=-0.1),
+            margin=dict(l=20, r=20, t=20, b=30),
+            height=300,
             xaxis={"title": "Cores"},
             yaxis={"title": "Usage (%)", "range": [0, 100]},
         )
     }
+
 
 def update_historical_cpu_graph(historical_cpu_data):
     if not historical_cpu_data:
@@ -37,6 +41,6 @@ def update_historical_cpu_graph(historical_cpu_data):
 
 def cpu_layout():
     return html.Div([
-        html.H4("CPU Usage", style={"textAlign": "center", "color": "blue"}),
-        dcc.Graph(id="cpu-graph")
+        html.H4("CPU Usage", className="graph-title"),
+        dcc.Graph(id="cpu-graph", className="graph-content")
     ])
