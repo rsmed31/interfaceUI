@@ -33,7 +33,8 @@ def main_dashboard_layout(ip_list):
                         html.Th("Number of Cores"),
                         html.Th("Frequency (MHz)"),
                         html.Th("Connected Users"),
-                        html.Th("Actions")
+                        html.Th("Actions"),
+                        html.Th("Delete") 
                     ])
                 ]),
                 html.Tbody(id="server-table-body", children=create_table_rows(ip_list, {}))
@@ -54,11 +55,10 @@ def main_dashboard_layout(ip_list):
 
         # Hidden elements
         dcc.Dropdown(id='ip-switcher', style={'display': 'none'}),
-        html.Button(id='back-button', style={'display': 'none'})
+        html.Button(id='back-button', style={'display': 'none'}),
     ], className="dashboard-container")
 
 def create_table_rows(ip_list, ip_data):
-    """Helper function to create table rows"""
     rows = []
     for ip in ip_list:
         if ip not in ip_data:
@@ -71,11 +71,12 @@ def create_table_rows(ip_list, ip_data):
             }
             
         data = ip_data[ip]
-        # Don't encode the IP for display, only for the href
+        # Ensure IP is properly encoded for both the link and button ID
+        encoded_ip = urllib.parse.quote(ip)
         rows.append(html.Tr([
             html.Td(dcc.Link(
-                ip,
-                href=f"/server/{ip}",
+                ip,  # Show original IP
+                href=f"/server/{encoded_ip}",
                 style={
                     'color': 'blue',
                     'textDecoration': 'underline',
@@ -87,6 +88,17 @@ def create_table_rows(ip_list, ip_data):
             html.Td(data['number_of_cores']),
             html.Td(data['frequency']),
             html.Td(data['connected_users']),
-            html.Td(html.Button('Retry', id={'type': 'retry-button', 'index': ip}, n_clicks=0))
+            html.Td(html.Button(
+                'Retry',
+                id={'type': 'retry-button', 'ip': encoded_ip},
+                n_clicks=0,
+                className='add-button'
+            )),
+            html.Td(html.Button(
+                'Delete',
+                id={'type': 'delete-button', 'ip': encoded_ip},
+                n_clicks=0,
+                className='add-button'
+            ))
         ]))
     return rows

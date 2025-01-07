@@ -53,9 +53,11 @@ def server_dashboard_layout(ip_list, current_ip):
 
         # Map and logs
         html.Div([
-            html.Div(id='ip-map'),
-            html.Div(id='recent-logs', className="card mt-20")
-        ], className="grid-container"),
+            html.Div(id='ip-map', className="map-container"),
+            html.Div(id='recent-logs', className="recent-logs-container card mt-20")
+        ], className="map-logs-container"),
+
+        html.Div(id='ip-map-message', className="text-center mt-20"),
 
         # Hidden elements and intervals
         dcc.Interval(id='interval-component-server', interval=5*1000),
