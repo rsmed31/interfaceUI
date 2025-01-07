@@ -1,5 +1,3 @@
-
-image: docker:19.03.12
 variables:
   CI_REGISTRY_IMAGE: devops.telecomste.fr:5050/printerfaceadmin/2024-25/group1/printerfaceui
   DOCKER_HOST: tcp://docker:2375/
