@@ -1,3 +1,3 @@
-from .api_service import fetch_cpu_data, fetch_disk_data, fetch_ram_data
+from .api_service import fetch_all_data,fetch_data,fetch_geolocation
 
-__all__ = ["fetch_cpu_data", "fetch_disk_data", "fetch_ram_data"]
+__all__ = ["fetch_all_data","fetch_data","fetch_geolocation"]

@@ -21,132 +21,31 @@ def set_base_url(url):
     else:
         BASE_URL = url
 
-async def fetch_health_status(session):
+async def fetch_data(session, endpoint):
     try:
-        async with session.get(f"{BASE_URL}/health", timeout=TIMEOUT) as response:
-            if response.status == 200:
-                return "Reachable"
-            else:
-                return "Not Reachable"
-    except asyncio.TimeoutError:
-        return "Not Reachable"
-    except Exception:
-        return "Not Reachable"
-
-async def fetch_cpu_data(session):
-    try:
-        async with session.get(f"{BASE_URL}/metrics/v1/cpu/usage", timeout=TIMEOUT) as response:
+        async with session.get(f"{BASE_URL}{endpoint}", timeout=TIMEOUT) as response:
+            if endpoint == "/health":
+                return "Reachable" if response.status == 200 else "Not Reachable"
             if response.status == 200:
                 return await response.json()
             else:
-                return []
+                return {} if endpoint != "/metrics/v1/log/logs/recent" else []
     except asyncio.TimeoutError:
-        return []
+        return "Not Reachable" if endpoint == "/health" else {} if endpoint != "/metrics/v1/log/logs/recent" else []
     except Exception:
-        return []
-
-async def fetch_cpu_core_info(session):
-    try:
-        async with session.get(f"{BASE_URL}/metrics/v1/cpu/core", timeout=TIMEOUT) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                return {}
-    except asyncio.TimeoutError:
-        return {}
-    except Exception:
-        return {}
-
-async def fetch_ram_data(session):
-    try:
-        async with session.get(f"{BASE_URL}/metrics/v1/ram/usage", timeout=TIMEOUT) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                return {}
-    except asyncio.TimeoutError:
-        return {}
-    except Exception:
-        return {}
-
-async def fetch_disk_data(session):
-    try:
-        async with session.get(f"{BASE_URL}/metrics/v1/disk/usage", timeout=TIMEOUT) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                return {}
-    except asyncio.TimeoutError:
-        return {}
-    except Exception:
-        return {}
-
-async def fetch_recent_logs(session):
-    try:
-        async with session.get(f"{BASE_URL}/metrics/v1/log/logs/recent", timeout=TIMEOUT) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                return []
-    except asyncio.TimeoutError:
-        return []
-    except Exception:
-        return []
-
-async def fetch_all_data():
-    async with aiohttp.ClientSession() as session:
-        results = await asyncio.gather(
-            fetch_health_status(session),
-            fetch_cpu_data(session),
-            fetch_cpu_core_info(session),
-            fetch_ram_data(session),
-            fetch_disk_data(session),
-            fetch_log_data(session),
-            fetch_recent_logs(session),
-            return_exceptions=True
-        )
-        return {
-            "health_status": results[0],
-            "cpu_data": results[1],
-            "cpu_core_info": results[2],
-            "ram_data": results[3],
-            "disk_data": results[4],
-            "log_data": results[5],
-            "recent_logs": results[6]
-        }
-
-async def fetch_log_data(session):
-    try:
-        async with session.get(f"{BASE_URL}/metrics/v1/log/logs", timeout=TIMEOUT) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                return {}
-    except asyncio.TimeoutError:
-        return {}
-    except Exception:
-        return {}
-async def fetch_connected_users(session):
-    try:
-        async with session.get(f"{BASE_URL}/metrics/v1/users/connected", timeout=TIMEOUT) as response:
-            if response.status == 200:
-                data = await response.json()
-                return data[0] if data else "No users"
-            return "Not available"
-    except Exception:
-        return "Not available"
+        return "Not Reachable" if endpoint == "/health" else {} if endpoint != "/metrics/v1/log/logs/recent" else []
 
 async def fetch_all_data():
     async with aiohttp.ClientSession() as session:
         tasks = [
-            fetch_health_status(session),
-            fetch_cpu_data(session),
-            fetch_cpu_core_info(session),
-            fetch_ram_data(session),
-            fetch_disk_data(session),
-            fetch_log_data(session),
-            fetch_recent_logs(session),
-            fetch_connected_users(session)
+            fetch_data(session, "/health"),
+            fetch_data(session, "/metrics/v1/cpu/usage"),
+            fetch_data(session, "/metrics/v1/cpu/core"),
+            fetch_data(session, "/metrics/v1/ram/usage"),
+            fetch_data(session, "/metrics/v1/disk/usage"),
+            fetch_data(session, "/metrics/v1/log/logs"),
+            fetch_data(session, "/metrics/v1/log/logs/recent"),
+            fetch_data(session, "/metrics/v1/users/connected")
         ]
         
         results = await asyncio.gather(*tasks, return_exceptions=True)
