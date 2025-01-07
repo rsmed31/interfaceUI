@@ -64,9 +64,10 @@ h4 {
     box-shadow: var(--shadow);
 }
 
+/* Add this section for the map container */
 .map-container {
     width: 100%;
-    height: 500px;
+    height: 500px; 
     margin: 20px 0;
 }
 
@@ -77,9 +78,26 @@ h4 {
     border: 1px solid var(--border-color);
 }
 
+/* Adjust the recent logs container */
+.recent-logs-container {
+    width: 100%;
+    margin: 20px 0;
+}
+
+/* Adjust the grid container for map and logs */
+.map-logs-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns of equal width */
+    gap: 20px;
+    margin: 20px 0;
+}
+
+/* Ensure the map and logs take full width */
+.map-logs-container > div {
+    flex: 1;
+}
+
 /* Graph containers */
-
-
 .graph-title {
     text-align: center;
     color: var(--text-color);
@@ -142,6 +160,10 @@ h4 {
     .graph-section {
         grid-template-columns: 1fr;
     }
+
+    .map-logs-container {
+        grid-template-columns: 1fr; /* Stack map and logs vertically on small screens */
+    }
 }
 
 /* Table styling */
@@ -178,8 +200,6 @@ h4 {
 .styled-table tbody tr:last-of-type {
     border-bottom: 2px solid var(--table-header-bg);
 }
-
-
 
 /* Input field styling */
 #ip-input {
