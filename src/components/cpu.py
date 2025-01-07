@@ -1,6 +1,6 @@
 import plotly.graph_objs as go
 from dash import dcc, html
-from services.api_service import fetch_cpu_data
+from services.api_service import fetch_data
 from datetime import datetime
 
 def update_cpu_graph(cpu_data):

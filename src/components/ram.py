@@ -1,14 +1,18 @@
 import plotly.graph_objs as go
 from dash import dcc, html
-from services.api_service import fetch_ram_data
+from services.api_service import fetch_data
 from datetime import datetime
 
 def update_ram_graph(ram_data):
     if not ram_data:
         return go.Figure()
     
+    # Convert bytes to gigabytes
+    used_gb = ram_data.get("used", 0) / (1024 ** 3)
+    available_gb = ram_data.get("available", 0) / (1024 ** 3)
+    
     labels = ["Used", "Available"]
-    values = [ram_data.get("used", 0), ram_data.get("available", 0)]
+    values = [used_gb, available_gb]
     return {
         "data": [
             go.Pie(
@@ -25,8 +29,6 @@ def update_ram_graph(ram_data):
             height=300
         )
     }
-
-
 
 def update_historical_ram_graph(historical_ram_data):
     if not historical_ram_data:
@@ -46,7 +48,7 @@ def update_historical_ram_graph(historical_ram_data):
             yaxis={"title": "Usage (%)", "range": [0, 100]},
         )
     }
-    
+
 def ram_layout():
     return html.Div([
         html.H4("RAM Usage", className="graph-title"),
