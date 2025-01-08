@@ -1,8 +1,7 @@
 stages: 
- -lint
- -static-analysis
- -build
-
+ - lint
+ - static-analysis
+ - build
 
 variables:
   CI_REGISTRY_IMAGE: devops.telecomste.fr:5050/printerfaceadmin/2024-25/group1/printerfaceui
