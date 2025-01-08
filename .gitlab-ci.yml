@@ -27,7 +27,7 @@ default:
 lint:
   stage: lint
   script:
-    pytest src/ --fail-under=8
+    pylint src/ --fail-under=8
   allow_failure: false
 
 # Static Analysis Stage
