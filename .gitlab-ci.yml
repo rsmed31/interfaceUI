@@ -21,7 +21,7 @@ services:
     command: ["dockerd-entrypoint.sh"]
 
 default:
-  image: python:3.8.10
+  image: devops.telecomste.fr:5050/printerfaceadmin/2024-25/group1/printerfaceui/cicontainer:base
 
 # Linting Stage
 lint:
