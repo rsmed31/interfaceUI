@@ -1,0 +1,25 @@
+    [MASTER]
+disable=
+    missing-docstring,
+    invalid-name,
+    too-few-public-methods,
+    too-many-arguments,
+    too-many-locals,
+    too-many-branches,
+    missing-final-newline,
+    wrong-import-order,
+    duplicate-code,
+    unused-import,
+    unused-argument,
+    unspecified-encoding,
+    broad-exception-caught,
+    no-value-for-parameter,
+
+
+ignore= tests
+
+[MESSAGES CONTROL]
+enable=all
+
+[REPORTS]
+output-format=colorized

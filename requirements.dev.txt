@@ -1,0 +1,10 @@
+dash==2.11.0
+plotly==5.15.0
+requests==2.31.0
+dash_daq==0.5.0
+aiohttp
+setuptools
+ipinfo
+dash-leaflet>=1.0.0
+pylint
+bandit

@@ -1,13 +1,46 @@
+stages: 
+ - lint
+ - static-analysis
+ - build
+
 variables:
   CI_REGISTRY_IMAGE: devops.telecomste.fr:5050/printerfaceadmin/2024-25/group1/printerfaceui
   DOCKER_HOST: tcp://docker:2375/
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
+  BANDIT_OPTIONS: "-r src/ -c .bandit.yml --exclude src/tests,src/core/config.py"
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
 services:
   - name: docker:dind
     entrypoint: ["env", "-u", "DOCKER_HOST"]
     command: ["dockerd-entrypoint.sh"]
-    
+
+default:
+  image: devops.telecomste.fr:5050/printerfaceadmin/2024-25/group1/printerfaceui/cicontainer:base
+
+# Linting Stage
+lint:
+  stage: lint
+  script:
+    pylint src/ --fail-under=8
+  allow_failure: false
+
+# Static Analysis Stage
+static-analysis:
+  stage: static-analysis
+  script:
+    - bandit $BANDIT_OPTIONS -f json -o bandit-report.json || true
+  artifacts:
+    paths:
+      - bandit-report.json
+  allow_failure: false
+
+
 # Build Stage
 build:
   image: docker:19.03.12
