@@ -3,6 +3,7 @@ import urllib.parse
 import json
 import ast
 import os
+import time
 from dash import Dash, dcc, html, no_update, callback_context
 from dash.dependencies import Input, Output, State, ALL
 from dash.exceptions import PreventUpdate
@@ -46,24 +47,26 @@ server = app.server
 initial_ip_data = load_ip_data()
 initial_ip_list = list(initial_ip_data.keys())
 
-# App layout with initialized ip_data_store
-app.layout = html.Div(
-    [
-        dcc.Location(id="url", refresh=False),
-        dcc.Store(id="ip-store", data=initial_ip_list),
-        dcc.Store(id="ip-data-store", data=initial_ip_data),
-        dcc.Store(id="historical-data-store", data={}),
-        dcc.Store(id="ip-locations-store", data={}),
-        html.Div(id="page-content", children=main_dashboard_layout(initial_ip_list)),
-        dcc.Interval(id="interval-component-main", interval=5 * 1000, n_intervals=0),
-    ]
-)
-
+# App layout with initialized stores
+app.layout = html.Div([
+    dcc.Location(id="url", refresh=False),
+    dcc.Store(id="ip-store", data=initial_ip_list),
+    dcc.Store(id="ip-data-store", data=initial_ip_data),
+    dcc.Store(id="historical-data-store", data={}),
+    dcc.Store(id="ip-locations-store", data={}),
+    dcc.Store(id="current-view", data="main"),
+    html.Div(id="page-content", children=main_dashboard_layout(initial_ip_list)),
+    dcc.Interval(id="interval-component-main", interval=5 * 1000, n_intervals=0),
+    dcc.Interval(id="interval-component-server", interval=5 * 1000, n_intervals=0, disabled=True)
+])
 
 @app.callback(
-    Output("page-content", "children"),
-    Input("url", "pathname"),
-    State("ip-store", "data"),
+    [Output("page-content", "children"),
+     Output("current-view", "data"),
+     Output("interval-component-main", "disabled"),
+     Output("interval-component-server", "disabled")],
+    [Input("url", "pathname")],
+    [State("ip-store", "data")]
 )
 def display_page(pathname, ip_list):
     if isinstance(pathname, list):
@@ -72,8 +75,24 @@ def display_page(pathname, ip_list):
         ip = pathname.split("/server/")[1]
         ip = urllib.parse.unquote(ip)
         if ip in ip_list:
-            return server_dashboard_layout(ip_list, ip)
-    return main_dashboard_layout(ip_list)
+            return server_dashboard_layout(ip_list, ip), "server", True, False
+    return main_dashboard_layout(ip_list), "main", False, True
+
+
+@app.callback(
+    Output("interval-component-server", "interval", allow_duplicate=True),
+    [Input("set-refresh-rate", "n_clicks")],
+    [State("refresh-rate-slider", "value"),
+     State("current-view", "data")],
+    prevent_initial_call=True
+)
+def update_server_interval(n_clicks, value, current_view):
+    if current_view != "server":
+        raise PreventUpdate
+    if n_clicks > 0:
+        return value * 1000
+    return no_update
+
 
 
 @app.callback(
@@ -86,27 +105,32 @@ def display_page(pathname, ip_list):
      Input({'type': 'delete-button', 'ip': ALL}, 'n_clicks')],
     [State('ip-input', 'value'),
      State('ip-store', 'data'),
-     State('ip-data-store', 'data')],
+     State('ip-data-store', 'data'),
+     State('current-view', 'data')],
     prevent_initial_call=True
 )
-def manage_ip_addresses(add_clicks, n_intervals, delete_clicks, ip, ip_list, ip_data):
+def manage_ip_addresses(add_clicks, n_intervals, delete_clicks, ip, ip_list, ip_data, current_view):
     ctx = callback_context
     if not ctx.triggered:
         raise PreventUpdate
 
     triggered_id = ctx.triggered[0]['prop_id']
-    print(f"Triggered ID: {triggered_id}")
+
+    # Only process interval updates if we're on main dashboard
+    if 'interval-component-main' in triggered_id and current_view != "main":
+        raise PreventUpdate
 
     # Handle delete button
-    if 'delete-button' in triggered_id:
+    if "delete-button" in triggered_id:
         try:
             # Extract everything between the first { and the last }
             import re
-            json_match = re.search(r'({.+})', triggered_id)
+
+            json_match = re.search(r"({.+})", triggered_id)
             if json_match:
                 button_id = json_match.group(1)
                 button_data = json.loads(button_id)
-                encoded_ip = button_data.get('ip')
+                encoded_ip = button_data.get("ip")
                 if encoded_ip:
                     ip_to_delete = urllib.parse.unquote(encoded_ip)
                     print(f"Attempting to delete IP: {ip_to_delete}")
@@ -116,10 +140,24 @@ def manage_ip_addresses(add_clicks, n_intervals, delete_clicks, ip, ip_list, ip_
                         ip_data.pop(ip_to_delete, None)
                         save_ip_data(ip_data)
                         rows = create_table_rows(ip_list, ip_data)
-                        return ['', ip_list, ip_data, rows]
+                        if not rows:
+                            rows = [
+                                html.Tr(
+                                    [
+                                        html.Td(
+                                            "Please add a server to monitor",
+                                            colSpan=8,
+                                            style={"textAlign": "center"},
+                                        )
+                                    ]
+                                )
+                            ]
+                        return ["", ip_list, ip_data, rows]
         except json.JSONDecodeError as e:
             print(f"JSON parsing error: {e}")
-            print(f"Problem string: {button_id if 'button_id' in locals() else 'No button_id'}")
+            print(
+                f"Problem string: {button_id if 'button_id' in locals() else 'No button_id'}"
+            )
             return [no_update, no_update, no_update, no_update]
         except Exception as e:
             print(f"Error deleting IP: {e}")
@@ -127,51 +165,86 @@ def manage_ip_addresses(add_clicks, n_intervals, delete_clicks, ip, ip_list, ip_
             return [no_update, no_update, no_update, no_update]
 
     # Handle IP addition
-    if 'add-button' in triggered_id:
+    if "add-button" in triggered_id:
         if not ip or ip in ip_list:
             raise PreventUpdate
 
         ip_list.append(ip)
         ip_data[ip] = {
-            'health': 'Fetching...',
-            'processor_name': 'Fetching...',
-            'number_of_cores': 'Fetching...',
-            'frequency': 'Fetching...',
-            'connected_users': 'Fetching...'
+            "health": "Fetching...",
+            "processor_name": "Fetching...",
+            "number_of_cores": "Fetching...",
+            "frequency": "Fetching...",
+            "connected_users": "Fetching...",
         }
         save_ip_data(ip_data)
         rows = create_table_rows(ip_list, ip_data)
-        return ['', ip_list, ip_data, rows]
+        if not rows:
+            rows = [
+                html.Tr(
+                    [
+                        html.Td(
+                            "Please add a server to monitor",
+                            colSpan=8,
+                            style={"textAlign": "center"},
+                        )
+                    ]
+                )
+            ]
+        return ["", ip_list, ip_data, rows]
 
     # Handle interval updates
-    if 'interval-component-main' in triggered_id:
+    if "interval-component-main" in triggered_id:
         for ip_addr in ip_list:
             if ip_addr not in ip_data:
                 ip_data[ip_addr] = {
-                    'health': 'Fetching...',
-                    'processor_name': 'Fetching...',
-                    'number_of_cores': 'Fetching...',
-                    'frequency': 'Fetching...',
-                    'connected_users': 'Fetching...'
+                    "health": "Fetching...",
+                    "processor_name": "Fetching...",
+                    "number_of_cores": "Fetching...",
+                    "frequency": "Fetching...",
+                    "connected_users": "Fetching...",
                 }
             else:
                 try:
                     set_base_url(ip_addr)
                     data = asyncio.run(fetch_all_data())
-                    ip_data[ip_addr]['health'] = data.get('health_status', 'Not Reachable')
-                    cpu_core_info = data.get('cpu_core_info', {})
-                    ip_data[ip_addr]['processor_name'] = cpu_core_info.get('processor_name', 'N/A')
-                    ip_data[ip_addr]['number_of_cores'] = cpu_core_info.get('number_of_cores', 'N/A')
-                    ip_data[ip_addr]['frequency'] = cpu_core_info.get('frequency', 'N/A')
-                    ip_data[ip_addr]['connected_users'] = data.get('last_connected', 'N/A')
+                    ip_data[ip_addr]["health"] = data.get(
+                        "health_status", "Not Reachable"
+                    )
+                    cpu_core_info = data.get("cpu_core_info", {})
+                    ip_data[ip_addr]["processor_name"] = cpu_core_info.get(
+                        "processor_name", "N/A"
+                    )
+                    ip_data[ip_addr]["number_of_cores"] = cpu_core_info.get(
+                        "number_of_cores", "N/A"
+                    )
+                    ip_data[ip_addr]["frequency"] = cpu_core_info.get(
+                        "frequency", "N/A"
+                    )
+                    ip_data[ip_addr]["connected_users"] = data.get(
+                        "last_connected", "N/A"
+                    )
                 except Exception as e:
                     print(f"Error updating IP {ip_addr}: {e}")
 
         save_ip_data(ip_data)
         rows = create_table_rows(ip_list, ip_data)
+        if not rows:
+            rows = [
+                html.Tr(
+                    [
+                        html.Td(
+                            "Please add a server to monitor",
+                            colSpan=8,
+                            style={"textAlign": "center"},
+                        )
+                    ]
+                )
+            ]
         return [no_update, ip_list, ip_data, rows]
 
     return [no_update, no_update, no_update, no_update]
+
 
 @app.callback(
     Output("url", "pathname", allow_duplicate=True),
@@ -256,54 +329,61 @@ def update_cpu_core_info(n_intervals, pathname):
 
 
 @app.callback(
-    Output("cpu-graph", "figure"),
-    Output("ram-graph", "figure"),
-    Output("historical-data-store", "data"),
+    [Output("cpu-graph", "figure", allow_duplicate=True),
+     Output("ram-graph", "figure", allow_duplicate=True),
+     Output("historical-data-store", "data", allow_duplicate=True)],
     Input("interval-component-server", "n_intervals"),
-    State("url", "pathname"),
-    State("historical-data-store", "data"),
+    [State("url", "pathname"),
+     State("historical-data-store", "data"),
+     State("current-view", "data")],
+    prevent_initial_call=True  # Add this line to prevent initial callback
 )
-def update_graphs_data(n_intervals, pathname, historical_data_store):
-    if pathname and pathname.startswith("/server/"):
+def update_graphs_data(n_intervals, pathname, historical_data_store, current_view):
+    if current_view != "server":
+        raise PreventUpdate
+        
+    if not pathname or not pathname.startswith("/server/"):
+        raise PreventUpdate
+
+    try:
         ip = pathname.split("/server/")[1]
+        ip = urllib.parse.unquote(ip)
         set_base_url(ip)
+        
+        # Fetch CPU and RAM data
         data = asyncio.run(fetch_all_data())
+        cpu_data = data.get('cpu_data', [])
+        ram_data = data.get('ram_data', {})
+        
+        # Update graphs
+        cpu_fig = update_cpu_graph(cpu_data)
+        ram_fig = update_ram_graph(ram_data)
+        
+        # Update historical data
+        historical_data = historical_data_store or {}
+        timestamp = time.time()
+        
+        if ip not in historical_data:
+            historical_data[ip] = {"cpu": [], "ram": []}
+            
+        historical_data[ip]["cpu"].append((timestamp, sum(float(core["usage"]) for core in cpu_data) / len(cpu_data) if cpu_data else 0))
+        historical_data[ip]["ram"].append((timestamp, (ram_data.get("used", 0) / (ram_data.get("used", 0) + ram_data.get("available", 1)) * 100) if ram_data else 0))
+        
+        return cpu_fig, ram_fig, historical_data
+        
+    except Exception as e:
+        print(f"Error updating graphs: {e}")
+        raise PreventUpdate
 
-        # Update CPU data
-        cpu_data = data.get("cpu_data", [])
-        timestamp = datetime.now().timestamp()
-        total_cpu_usage = (
-            sum(float(core["usage"]) for core in cpu_data) / len(cpu_data)
-            if cpu_data
-            else 0
-        )
-        if ip not in historical_data_store:
-            historical_data_store[ip] = {"cpu": [], "ram": []}
-        historical_data_store[ip]["cpu"].append(
-            {"timestamp": timestamp, "total_usage": total_cpu_usage}
-        )
-        historical_data_store[ip]["cpu"] = historical_data_store[ip]["cpu"][
-            -100:
-        ]  # Keep only the last 100 data points
-
-        # Update RAM data
-        ram_data = data.get("ram_data", {})
-        used = ram_data.get("used", 0)
-        total = used + ram_data.get("available", 0)
-        total_ram_usage = (used / total) * 100 if total else 0
-        historical_data_store[ip]["ram"].append(
-            {"timestamp": timestamp, "total_usage": total_ram_usage}
-        )
-        historical_data_store[ip]["ram"] = historical_data_store[ip]["ram"][
-            -100:
-        ]  # Keep only the last 100 data points
-
-        return (
-            update_cpu_graph(cpu_data),
-            update_ram_graph(ram_data),
-            historical_data_store,
-        )
-    return no_update, no_update, historical_data_store
+@app.callback(
+    Output("interval-component-server", "interval"),
+    Input("set-refresh-rate", "n_clicks"),
+    State("refresh-rate-slider", "value"),
+)
+def update_interval(n_clicks, value):
+    if n_clicks > 0:
+        return value * 1000  # Convert seconds to milliseconds
+    return no_update
 
 
 @app.callback(
@@ -323,10 +403,11 @@ def update_disk_graph_data(n_intervals, pathname):
 
 @app.callback(
     Output("historical-cpu-graph", "figure"),
-    Input("url", "pathname"),
+    Input("interval-component-server", "n_intervals"),
+    State("url", "pathname"),
     State("historical-data-store", "data"),
 )
-def update_historical_cpu_graph_data(pathname, historical_data_store):
+def update_historical_cpu_graph_data(n_intervals, pathname, historical_data_store):
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         historical_cpu_data = historical_data_store.get(ip, {}).get("cpu", [])
@@ -336,10 +417,11 @@ def update_historical_cpu_graph_data(pathname, historical_data_store):
 
 @app.callback(
     Output("historical-ram-graph", "figure"),
-    Input("url", "pathname"),
+    Input("interval-component-server", "n_intervals"),
+    State("url", "pathname"),
     State("historical-data-store", "data"),
 )
-def update_historical_ram_graph_data(pathname, historical_data_store):
+def update_historical_ram_graph_data(n_intervals, pathname, historical_data_store):
     if pathname and pathname.startswith("/server/"):
         ip = pathname.split("/server/")[1]
         historical_ram_data = historical_data_store.get(ip, {}).get("ram", [])

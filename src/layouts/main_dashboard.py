@@ -2,7 +2,12 @@ from dash import html, dcc
 from components.logs import aggregated_log_layout
 import urllib.parse
 
+
 def main_dashboard_layout(ip_list):
+    table_rows = create_table_rows(ip_list, {})
+    if not table_rows:
+        table_rows = [html.Tr([html.Td("Please add a server to monitor", colSpan=8, style={"textAlign": "center"})])]
+
     return html.Div([
         html.H1("Server Monitoring Dashboard", className="text-center mb-20"),
 
@@ -37,7 +42,7 @@ def main_dashboard_layout(ip_list):
                         html.Th("Delete") 
                     ])
                 ]),
-                html.Tbody(id="server-table-body", children=create_table_rows(ip_list, {}))
+                html.Tbody(id="server-table-body", children=table_rows)
             ], className="styled-table")
         ], className="card"),
 
@@ -56,6 +61,10 @@ def main_dashboard_layout(ip_list):
         # Hidden elements
         dcc.Dropdown(id='ip-switcher', style={'display': 'none'}),
         html.Button(id='back-button', style={'display': 'none'}),
+        dcc.Graph(id="cpu-graph", style={'display': 'none'}),
+        dcc.Graph(id="ram-graph", style={'display': 'none'}),
+        dcc.Interval(id='interval-component-server', interval=5 * 1000, n_intervals=0, disabled=True)
+
     ], className="dashboard-container")
 
 def create_table_rows(ip_list, ip_data):
