@@ -260,6 +260,27 @@ label[for='monitoring-switch'] {
     margin-right: 15px;
 }
 
+.log-container {
+    word-break: break-word;
+    overflow: hidden;
+    white-space: pre-wrap;
+    width: 100%;
+}
+
+.log-data-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 20px;
+    margin: 0 auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: #fff;
+    width: fit-content;
+    box-shadow: var(--shadow);
+}
 /* Additional utility classes */
 .text-center { text-align: center; }
 .mb-20 { margin-bottom: 20px; }

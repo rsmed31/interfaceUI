@@ -13,40 +13,15 @@ def log_layout(log_data):
     return html.Div([
         html.H4("Log Data", style={"color": "blue", "marginBottom": "15px"}),
         html.Div([
-            html.P(f"Errors: {failed}", style={"color": "red", "marginRight": "15px"}),
-            html.P(f"Successes: {succeed}", style={"color": "green", "marginRight": "15px"}),
+            html.P(f"Errors: {failed}", style={"color": "red"}),
+            html.P(f"Successes: {succeed}", style={"color": "green"}),
             html.P(f"Most Viewed Page: {most_viewed_page}", style={"color": "blue"})
-        ], style={
-            "display": "flex",
-            "justifyContent": "center",
-            "alignItems": "center",
-            "padding": "10px 20px",
-            "margin": "0 auto",
-            "border": "1px solid #ddd",
-            "borderRadius": "8px",
-            "backgroundColor": "#fff",
-            "width": "fit-content",
-            "boxShadow": "0 2px 4px rgba(0, 0, 0, 0.1)"
-        }),
+        ], className="log-data-container"),
         html.Div([
             html.H5("Visits per Page:", style={"color": "black", "marginTop": "20px"}),
-            html.Div(visits_per_page, style={
-                "color": "black",
-                "textAlign": "left"
-            })
-        ], style={
-            "padding": "10px 20px",
-            "margin": "20px auto 0 auto",
-            "border": "1px solid #ddd",
-            "borderRadius": "8px",
-            "backgroundColor": "#fff",
-            "width": "fit-content",
-            "boxShadow": "0 2px 4px rgba(0, 0, 0, 0.1)"
-        })
-    ], style={
-        "textAlign": "center",
-        "margin": "20px auto"
-    })
+            html.Div(visits_per_page, className="log-container")
+        ], className="log-container")
+    ], className="log-container")
 
 def aggregated_log_layout(aggregated_data):
     return html.Div([
@@ -55,22 +30,8 @@ def aggregated_log_layout(aggregated_data):
             html.P(f"Errors: {aggregated_data['failed']}", style={"color": "red", "marginRight": "15px"}),
             html.P(f"Successes: {aggregated_data['succeed']}", style={"color": "green", "marginRight": "15px"}),
             html.P(f"Total Visitors: {aggregated_data['total_visitors']}", style={"color": "blue"})
-        ], style={
-            "display": "flex",
-            "justifyContent": "center",
-            "alignItems": "center",
-            "padding": "10px 20px",
-            "margin": "0 auto",
-            "border": "1px solid #ddd",
-            "borderRadius": "8px",
-            "backgroundColor": "#fff",
-            "width": "fit-content",
-            "boxShadow": "0 2px 4px rgba(0, 0, 0, 0.1)"
-        })
-    ], style={
-        "textAlign": "center",
-        "margin": "20px auto"
-    })
+        ], className="log-data-container")
+    ], className="log-container")
 
 def recent_logs_layout(recent_logs):
     if not recent_logs:
