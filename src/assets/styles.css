@@ -296,6 +296,14 @@ label[for='monitoring-switch'] {
     margin-bottom: 20px;
 }
 
+
+.logo {
+    max-width: 150px;
+    margin: 20px auto;
+    margin-bottom: 1px;
+    display: block;
+}
+
 .mt-20 {
     margin-top: 20px;
 }

@@ -56,6 +56,7 @@ app.layout = html.Div(
         dcc.Store(id="historical-data-store", data={}),
         dcc.Store(id="ip-locations-store", data={}),
         dcc.Store(id="current-view", data="main"),
+        html.Div(html.Img(src="/assets/logo.png", className="logo")),
         html.Div(id="page-content", children=main_dashboard_layout(initial_ip_list)),
         dcc.Interval(id="interval-component-main", interval=5 * 1000, n_intervals=0),
         dcc.Interval(
