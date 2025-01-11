@@ -1,7 +1,7 @@
 bandit:
   skipped_tests:
+    - B101
     - B104
-    - B105
 
   targets:
     - src/
