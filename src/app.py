@@ -48,25 +48,35 @@ initial_ip_data = load_ip_data()
 initial_ip_list = list(initial_ip_data.keys())
 
 # App layout with initialized stores
-app.layout = html.Div([
-    dcc.Location(id="url", refresh=False),
-    dcc.Store(id="ip-store", data=initial_ip_list),
-    dcc.Store(id="ip-data-store", data=initial_ip_data),
-    dcc.Store(id="historical-data-store", data={}),
-    dcc.Store(id="ip-locations-store", data={}),
-    dcc.Store(id="current-view", data="main"),
-    html.Div(id="page-content", children=main_dashboard_layout(initial_ip_list)),
-    dcc.Interval(id="interval-component-main", interval=5 * 1000, n_intervals=0),
-    dcc.Interval(id="interval-component-server", interval=5 * 1000, n_intervals=0, disabled=True)
-])
+app.layout = html.Div(
+    [
+        dcc.Location(id="url", refresh=False),
+        dcc.Store(id="ip-store", data=initial_ip_list),
+        dcc.Store(id="ip-data-store", data=initial_ip_data),
+        dcc.Store(id="historical-data-store", data={}),
+        dcc.Store(id="ip-locations-store", data={}),
+        dcc.Store(id="current-view", data="main"),
+        html.Div(id="page-content", children=main_dashboard_layout(initial_ip_list)),
+        dcc.Interval(id="interval-component-main", interval=5 * 1000, n_intervals=0),
+        dcc.Interval(
+            id="interval-component-server",
+            interval=5 * 1000,
+            n_intervals=0,
+            disabled=True,
+        ),
+    ]
+)
+
 
 @app.callback(
-    [Output("page-content", "children"),
-     Output("current-view", "data"),
-     Output("interval-component-main", "disabled"),
-     Output("interval-component-server", "disabled")],
+    [
+        Output("page-content", "children"),
+        Output("current-view", "data"),
+        Output("interval-component-main", "disabled"),
+        Output("interval-component-server", "disabled"),
+    ],
     [Input("url", "pathname")],
-    [State("ip-store", "data")]
+    [State("ip-store", "data")],
 )
 def display_page(pathname, ip_list):
     if isinstance(pathname, list):
@@ -82,9 +92,8 @@ def display_page(pathname, ip_list):
 @app.callback(
     Output("interval-component-server", "interval", allow_duplicate=True),
     [Input("set-refresh-rate", "n_clicks")],
-    [State("refresh-rate-slider", "value"),
-     State("current-view", "data")],
-    prevent_initial_call=True
+    [State("refresh-rate-slider", "value"), State("current-view", "data")],
+    prevent_initial_call=True,
 )
 def update_server_interval(n_clicks, value, current_view):
     if current_view != "server":
@@ -94,30 +103,37 @@ def update_server_interval(n_clicks, value, current_view):
     return no_update
 
 
-
 @app.callback(
-    [Output('ip-input', 'value'),
-     Output('ip-store', 'data'),
-     Output('ip-data-store', 'data'),
-     Output('server-table-body', 'children')],
-    [Input('add-button', 'n_clicks'),
-     Input('interval-component-main', 'n_intervals'),
-     Input({'type': 'delete-button', 'ip': ALL}, 'n_clicks')],
-    [State('ip-input', 'value'),
-     State('ip-store', 'data'),
-     State('ip-data-store', 'data'),
-     State('current-view', 'data')],
-    prevent_initial_call=True
+    [
+        Output("ip-input", "value"),
+        Output("ip-store", "data"),
+        Output("ip-data-store", "data"),
+        Output("server-table-body", "children"),
+    ],
+    [
+        Input("add-button", "n_clicks"),
+        Input("interval-component-main", "n_intervals"),
+        Input({"type": "delete-button", "ip": ALL}, "n_clicks"),
+    ],
+    [
+        State("ip-input", "value"),
+        State("ip-store", "data"),
+        State("ip-data-store", "data"),
+        State("current-view", "data"),
+    ],
+    prevent_initial_call=True,
 )
-def manage_ip_addresses(add_clicks, n_intervals, delete_clicks, ip, ip_list, ip_data, current_view):
+def manage_ip_addresses(
+    add_clicks, n_intervals, delete_clicks, ip, ip_list, ip_data, current_view
+):
     ctx = callback_context
     if not ctx.triggered:
         raise PreventUpdate
 
-    triggered_id = ctx.triggered[0]['prop_id']
+    triggered_id = ctx.triggered[0]["prop_id"]
 
     # Only process interval updates if we're on main dashboard
-    if 'interval-component-main' in triggered_id and current_view != "main":
+    if "interval-component-main" in triggered_id and current_view != "main":
         raise PreventUpdate
 
     # Handle delete button
@@ -268,7 +284,7 @@ def handle_navigation(
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
     if "ip-link" in triggered_id and any(ip_link_clicks):
-        button_data = eval(triggered_id)
+        button_data = ast.literal_eval(triggered_id)
         ip = urllib.parse.unquote(button_data["ip"])  # Decode the IP
         return f"/server/{ip}"
 
@@ -279,7 +295,7 @@ def handle_navigation(
         return f"/server/{selected_ip}"
 
     elif "retry-button" in triggered_id and any(retry_clicks):
-        button_data = eval(triggered_id)
+        button_data = ast.literal_eval(triggered_id)
         ip = urllib.parse.unquote(button_data["index"])  # Decode the IP
         return no_update
 
@@ -329,19 +345,23 @@ def update_cpu_core_info(n_intervals, pathname):
 
 
 @app.callback(
-    [Output("cpu-graph", "figure", allow_duplicate=True),
-     Output("ram-graph", "figure", allow_duplicate=True),
-     Output("historical-data-store", "data", allow_duplicate=True)],
+    [
+        Output("cpu-graph", "figure", allow_duplicate=True),
+        Output("ram-graph", "figure", allow_duplicate=True),
+        Output("historical-data-store", "data", allow_duplicate=True),
+    ],
     Input("interval-component-server", "n_intervals"),
-    [State("url", "pathname"),
-     State("historical-data-store", "data"),
-     State("current-view", "data")],
-    prevent_initial_call=True  # Add this line to prevent initial callback
+    [
+        State("url", "pathname"),
+        State("historical-data-store", "data"),
+        State("current-view", "data"),
+    ],
+    prevent_initial_call=True,
 )
 def update_graphs_data(n_intervals, pathname, historical_data_store, current_view):
     if current_view != "server":
         raise PreventUpdate
-        
+
     if not pathname or not pathname.startswith("/server/"):
         raise PreventUpdate
 
@@ -349,31 +369,54 @@ def update_graphs_data(n_intervals, pathname, historical_data_store, current_vie
         ip = pathname.split("/server/")[1]
         ip = urllib.parse.unquote(ip)
         set_base_url(ip)
-        
+
         # Fetch CPU and RAM data
         data = asyncio.run(fetch_all_data())
-        cpu_data = data.get('cpu_data', [])
-        ram_data = data.get('ram_data', {})
-        
+        cpu_data = data.get("cpu_data", [])
+        ram_data = data.get("ram_data", {})
+
         # Update graphs
         cpu_fig = update_cpu_graph(cpu_data)
         ram_fig = update_ram_graph(ram_data)
-        
+
         # Update historical data
         historical_data = historical_data_store or {}
         timestamp = time.time()
-        
+
         if ip not in historical_data:
             historical_data[ip] = {"cpu": [], "ram": []}
-            
-        historical_data[ip]["cpu"].append((timestamp, sum(float(core["usage"]) for core in cpu_data) / len(cpu_data) if cpu_data else 0))
-        historical_data[ip]["ram"].append((timestamp, (ram_data.get("used", 0) / (ram_data.get("used", 0) + ram_data.get("available", 1)) * 100) if ram_data else 0))
-        
+
+        historical_data[ip]["cpu"].append(
+            (
+                timestamp,
+                (
+                    sum(float(core["usage"]) for core in cpu_data) / len(cpu_data)
+                    if cpu_data
+                    else 0
+                ),
+            )
+        )
+        historical_data[ip]["ram"].append(
+            (
+                timestamp,
+                (
+                    (
+                        ram_data.get("used", 0)
+                        / (ram_data.get("used", 0) + ram_data.get("available", 1))
+                        * 100
+                    )
+                    if ram_data
+                    else 0
+                ),
+            )
+        )
+
         return cpu_fig, ram_fig, historical_data
-        
+
     except Exception as e:
         print(f"Error updating graphs: {e}")
         raise PreventUpdate
+
 
 @app.callback(
     Output("interval-component-server", "interval"),

@@ -27,7 +27,9 @@ body {
     color: var(--text-color);
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
     color: #333;
 }
 
@@ -67,7 +69,7 @@ h4 {
 /* Add this section for the map container */
 .map-container {
     width: 100%;
-    height: 500px; 
+    height: 500px;
     margin: 20px 0;
 }
 
@@ -87,13 +89,14 @@ h4 {
 /* Adjust the grid container for map and logs */
 .map-logs-container {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Two columns of equal width */
+    grid-template-columns: 1fr 1fr;
+    /* Two columns of equal width */
     gap: 20px;
     margin: 20px 0;
 }
 
 /* Ensure the map and logs take full width */
-.map-logs-container > div {
+.map-logs-container>div {
     flex: 1;
 }
 
@@ -121,7 +124,8 @@ h4 {
 }
 
 .dccGraph {
-    flex: 1; /* Allow the graph to grow and shrink */
+    flex: 1;
+    /* Allow the graph to grow and shrink */
     width: 100%;
     height: 100%;
 }
@@ -152,17 +156,18 @@ h4 {
     .flex-container {
         flex-direction: column;
     }
-    
+
     .grid-container {
         grid-template-columns: 1fr;
     }
-    
+
     .graph-section {
         grid-template-columns: 1fr;
     }
 
     .map-logs-container {
-        grid-template-columns: 1fr; /* Stack map and logs vertically on small screens */
+        grid-template-columns: 1fr;
+        /* Stack map and logs vertically on small screens */
     }
 }
 
@@ -281,23 +286,37 @@ label[for='monitoring-switch'] {
     width: fit-content;
     box-shadow: var(--shadow);
 }
+
 /* Additional utility classes */
-.text-center { text-align: center; }
-.mb-20 { margin-bottom: 20px; }
-.mt-20 { margin-top: 20px; }
-.p-20 { padding: 20px; }
+.text-center {
+    text-align: center;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.p-20 {
+    padding: 20px;
+}
 
 /* Graph section layout */
 .graph-section {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 graphs per row by default */
+    grid-template-columns: repeat(3, 1fr);
+    /* 3 graphs per row by default */
     gap: 20px;
     margin: 20px 0;
 }
 
 .historical-graph-section {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 historical graphs per row */
+    grid-template-columns: repeat(2, 1fr);
+    /* 2 historical graphs per row */
     gap: 20px;
     margin: 20px 0;
 }
@@ -305,18 +324,22 @@ label[for='monitoring-switch'] {
 /* Responsive breakpoints */
 @media (max-width: 1400px) {
     .graph-section {
-        grid-template-columns: repeat(2, 1fr); /* 2 graphs per row */
+        grid-template-columns: repeat(2, 1fr);
+        /* 2 graphs per row */
     }
 }
 
 @media (max-width: 1000px) {
+
     .graph-section,
     .historical-graph-section {
-        grid-template-columns: 1fr; /* 1 graph per row */
+        grid-template-columns: 1fr;
+        /* 1 graph per row */
     }
-    
+
     .graph-container {
-        height: 350px; /* Slightly smaller on smaller screens */
+        height: 350px;
+        /* Slightly smaller on smaller screens */
     }
 }
 

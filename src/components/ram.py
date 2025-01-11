@@ -3,6 +3,7 @@ from dash import dcc, html
 from services.api_service import fetch_data
 from datetime import datetime
 
+
 def update_ram_graph(ram_data):
     if not ram_data:
         return go.Figure()
@@ -34,27 +35,33 @@ def update_ram_graph(ram_data):
                 },
             )
         ],
-        "layout": go.Layout(margin=dict(l=40, r=20, t=20, b=30), height=300),  # Add space on the left
+        "layout": go.Layout(
+            margin=dict(l=40, r=20, t=20, b=30), height=300
+        ),  # Add space on the left
     }
+
 
 def update_historical_ram_graph(historical_ram_data):
     if not historical_ram_data:
         return go.Figure()
-        
+
     x_data = [datetime.fromtimestamp(point[0]) for point in historical_ram_data]
     y_data = [point[1] for point in historical_ram_data]
-    
+
     return {
         "data": [
-            go.Scatter(x=x_data, y=y_data, mode="lines+markers", name="Historical RAM Usage")
+            go.Scatter(
+                x=x_data, y=y_data, mode="lines+markers", name="Historical RAM Usage"
+            )
         ],
         "layout": go.Layout(
             xaxis={"title": "Time"},
             yaxis={"title": "Usage (%)", "range": [0, 100]},
             margin=dict(l=40, r=20, t=20, b=30),  # Add space on the left
-        )
+        ),
     }
-    
+
+
 def ram_layout():
     return html.Div(
         [

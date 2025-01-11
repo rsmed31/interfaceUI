@@ -8,7 +8,7 @@ variables:
   DOCKER_HOST: tcp://docker:2375/
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
-  BANDIT_OPTIONS: "-r src/ -c .bandit.yml --exclude src/tests,src/core/config.py"
+  BANDIT_OPTIONS: "-r src/ -c bandit.yml"
 
 workflow:
   rules:
@@ -34,10 +34,7 @@ lint:
 static-analysis:
   stage: static-analysis
   script:
-    - bandit $BANDIT_OPTIONS -f json -o bandit-report.json || true
-  artifacts:
-    paths:
-      - bandit-report.json
+    - bandit $BANDIT_OPTIONS
   allow_failure: false
 
 
