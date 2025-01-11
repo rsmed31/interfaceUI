@@ -1,13 +1,7 @@
 bandit:
-  exclude_dirs:
-    - tests
-
   skipped_tests:
-    - B101
     - B104
+    - B105
 
   targets:
     - src/
-
-  exclude_files:
-    - src/core/config.py

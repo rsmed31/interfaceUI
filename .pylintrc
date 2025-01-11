@@ -1,8 +1,6 @@
     [MASTER]
 disable=
-    missing-docstring,
     invalid-name,
-    too-few-public-methods,
     too-many-arguments,
     too-many-locals,
     too-many-branches,
@@ -13,7 +11,7 @@ disable=
     unused-argument,
     unspecified-encoding,
     broad-exception-caught,
-    no-value-for-parameter,
+    trailing-whitespace
 
 
 ignore= tests
