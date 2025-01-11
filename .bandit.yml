@@ -1,7 +1,11 @@
 bandit:
+  exclude_dirs:
+
   skipped_tests:
     - B101
     - B104
 
   targets:
     - src/
+
+  exclude_files:
