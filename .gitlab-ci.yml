@@ -34,10 +34,7 @@ lint:
 static-analysis:
   stage: static-analysis
   script:
-    - bandit $BANDIT_OPTIONS -f json -o bandit-report.json
-  artifacts:
-    paths:
-      - bandit-report.json
+    - bandit $BANDIT_OPTIONS
   allow_failure: false
 
 
