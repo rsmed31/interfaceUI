@@ -72,11 +72,7 @@ make run
 
 ## CI/CD Pipeline
 
-This project uses GitLab CI/CD for automated building and deployment:
-
-- **Build Stage**: Creates Docker image
-- **Test Stage**: Runs unit tests and linting
-- **Deploy Stage**: Pushes to Docker registry
+This project uses GitLab CI/CD for automated building.
 
 View `.gitlab-ci.yml` for pipeline configuration.
 
