@@ -59,12 +59,6 @@ app.layout = html.Div(
         html.Div(html.Img(src="/assets/logo.png", className="logo")),
         html.Div(id="page-content", children=main_dashboard_layout(initial_ip_list)),
         dcc.Interval(id="interval-component-main", interval=5 * 1000, n_intervals=0),
-        dcc.Interval(
-            id="interval-component-server",
-            interval=5 * 1000,
-            n_intervals=0,
-            disabled=True,
-        ),
     ]
 )
 
