@@ -7,7 +7,7 @@ import ipinfo
 ip_location_cache: Dict[str, Optional[dict]] = {}
 
 BASE_URL = "http://localhost:8000"
-TIMEOUT = 2  # Reduced timeout for quicker detection
+TIMEOUT = 5  # Reduced timeout for quicker detection
 
 # Initialize ipinfo handler
 IPINFO_TOKEN = "9a2815cabdac3d"  # Replace with your token
