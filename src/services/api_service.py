@@ -2,14 +2,9 @@ import aiohttp
 import asyncio
 from typing import Dict, Optional
 import ipinfo
-import time
 
 # Cache for storing IP locations
 ip_location_cache: Dict[str, Optional[dict]] = {}
-
-# Cache for storing API results
-api_cache: Dict[str, dict] = {}
-cache_expiry = 5  # Cache expiry time in seconds
 
 BASE_URL = "http://localhost:8000"
 TIMEOUT = 2  # Reduced timeout for quicker detection
@@ -70,10 +65,6 @@ async def fetch_all_data():
     Returns:
         dict: Dictionary containing all fetched data.
     """
-    current_time = time.time()
-    if BASE_URL in api_cache and current_time - api_cache[BASE_URL]['timestamp'] < cache_expiry:
-        return api_cache[BASE_URL]['data']
-
     async with aiohttp.ClientSession() as session:
         tasks = [
             fetch_data(session, "/health"),
@@ -88,7 +79,7 @@ async def fetch_all_data():
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        data = {
+        return {
             "health_status": (
                 results[0] if not isinstance(results[0], Exception) else "Not Reachable"
             ),
@@ -104,9 +95,6 @@ async def fetch_all_data():
                 results[7] if not isinstance(results[7], Exception) else "N/A"
             ),
         }
-
-        api_cache[BASE_URL] = {'data': data, 'timestamp': current_time}
-        return data
 
 async def fetch_geolocation(ip: str) -> Optional[dict]:
     """
