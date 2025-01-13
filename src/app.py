@@ -325,17 +325,16 @@ def update_cpu_core_info(n_intervals, pathname):
         set_base_url(ip)
         data = asyncio.run(fetch_all_data())
         cpu_core_info = data.get("cpu_core_info", {})
-        if not cpu_core_info:
-            return html.Div("CPU Core Info Not Available", style={"color": "red"})
-        return html.Div(
-            [
-                html.P(f"Processor Name: {cpu_core_info.get('processor_name', 'N/A')}"),
-                html.P(
-                    f"Number of Cores: {cpu_core_info.get('number_of_cores', 'N/A')}"
-                ),
-                html.P(f"Frequency: {cpu_core_info.get('frequency', 'N/A')} MHz"),
-            ]
-        )
+        
+        processor_name = cpu_core_info.get('processor_name', 'Unavailable')
+        number_of_cores = cpu_core_info.get('number_of_cores', 'Unavailable')
+        frequency = cpu_core_info.get('frequency', 'Unavailable')
+        
+        return html.Div([
+            html.P(f"Processor Name: {processor_name}"),
+            html.P(f"Number of Cores: {number_of_cores}"),
+            html.P(f"Frequency: {frequency} MHz" if frequency != 'Unavailable' else "Frequency: Unavailable"),
+        ])
     return no_update
 
 

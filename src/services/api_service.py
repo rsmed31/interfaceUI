@@ -59,12 +59,6 @@ async def fetch_data(session, endpoint):
         )
 
 async def fetch_all_data():
-    """
-    Fetch all relevant data from the API.
-
-    Returns:
-        dict: Dictionary containing all fetched data.
-    """
     async with aiohttp.ClientSession() as session:
         tasks = [
             fetch_data(session, "/health"),
@@ -79,21 +73,28 @@ async def fetch_all_data():
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
+        # Add default values for empty responses
+        cpu_core_info = results[2] if not isinstance(results[2], Exception) else {}
+        if not cpu_core_info.get('processor_name'):
+            cpu_core_info['processor_name'] = 'Unavailable'
+        if not cpu_core_info.get('number_of_cores'):
+            cpu_core_info['number_of_cores'] = 'Unavailable'
+        if not cpu_core_info.get('frequency'):
+            cpu_core_info['frequency'] = 'Unavailable'
+
+        last_connected = results[7] if not isinstance(results[7], Exception) else 'Unavailable'
+        if not last_connected or last_connected == 'N/A':
+            last_connected = 'Unavailable'
+
         return {
-            "health_status": (
-                results[0] if not isinstance(results[0], Exception) else "Not Reachable"
-            ),
+            "health_status": results[0] if not isinstance(results[0], Exception) else "Not Reachable",
             "cpu_data": results[1] if not isinstance(results[1], Exception) else [],
-            "cpu_core_info": (
-                results[2] if not isinstance(results[2], Exception) else {}
-            ),
+            "cpu_core_info": cpu_core_info,
             "ram_data": results[3] if not isinstance(results[3], Exception) else {},
             "disk_data": results[4] if not isinstance(results[4], Exception) else {},
             "log_data": results[5] if not isinstance(results[5], Exception) else {},
             "recent_logs": results[6] if not isinstance(results[6], Exception) else [],
-            "last_connected": (
-                results[7] if not isinstance(results[7], Exception) else "N/A"
-            ),
+            "last_connected": last_connected,
         }
 
 async def fetch_geolocation(ip: str) -> Optional[dict]:
