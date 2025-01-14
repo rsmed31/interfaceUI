@@ -207,53 +207,54 @@ def manage_ip_addresses(
 
     # Handle interval updates
     if "interval-component-main" in triggered_id:
-        for ip_addr in ip_list:
-            if ip_addr not in ip_data:
-                ip_data[ip_addr] = {
-                    "health": "Fetching...",
-                    "processor_name": "Fetching...",
-                    "number_of_cores": "Fetching...",
-                    "frequency": "Fetching...",
-                    "connected_users": "Fetching...",
-                }
-            else:
-                try:
-                    set_base_url(ip_addr)
-                    data = asyncio.run(fetch_all_data())
-                    ip_data[ip_addr]["health"] = data.get(
-                        "health_status", "Not Reachable"
-                    )
-                    cpu_core_info = data.get("cpu_core_info", {})
-                    ip_data[ip_addr]["processor_name"] = cpu_core_info.get(
-                        "processor_name", "N/A"
-                    )
-                    ip_data[ip_addr]["number_of_cores"] = cpu_core_info.get(
-                        "number_of_cores", "N/A"
-                    )
-                    ip_data[ip_addr]["frequency"] = cpu_core_info.get(
-                        "frequency", "N/A"
-                    )
-                    ip_data[ip_addr]["connected_users"] = data.get(
-                        "last_connected", "N/A"
-                    )
-                except Exception as e:
-                    print(f"Error updating IP {ip_addr}: {e}")
+        # Create a temporary copy of the data
+        updated_ip_data = ip_data.copy()
+        
+        async def update_server_data():
+            for ip_addr in ip_list:
+                if ip_addr not in updated_ip_data:
+                    updated_ip_data[ip_addr] = {
+                        "health": "Fetching...",
+                        "processor_name": "Fetching...",
+                        "number_of_cores": "Fetching...",
+                        "frequency": "Fetching...",
+                        "connected_users": "Fetching...",
+                    }
+                else:
+                    try:
+                        set_base_url(ip_addr)
+                        async with aiohttp.ClientSession() as session:
+                            data = await fetch_all_data()
+                            # Update data for this specific IP only
+                            server_data = updated_ip_data[ip_addr]
+                            server_data["health"] = data.get("health_status", "Not Reachable")
+                            cpu_core_info = data.get("cpu_core_info", {})
+                            server_data["processor_name"] = cpu_core_info.get("processor_name", "N/A")
+                            server_data["number_of_cores"] = cpu_core_info.get("number_of_cores", "N/A")
+                            server_data["frequency"] = cpu_core_info.get("frequency", "N/A")
+                            server_data["connected_users"] = data.get("last_connected", "N/A")
+                    except Exception as e:
+                        print(f"Error updating IP {ip_addr}: {e}")
+                        # Keep existing data on error
+                        continue
 
-        save_ip_data(ip_data)
-        rows = create_table_rows(ip_list, ip_data)
+        # Run the updates
+        asyncio.run(update_server_data())
+        
+        # Save the updated data
+        save_ip_data(updated_ip_data)
+        rows = create_table_rows(ip_list, updated_ip_data)
         if not rows:
             rows = [
-                html.Tr(
-                    [
-                        html.Td(
-                            "Please add a server to monitor",
-                            colSpan=8,
-                            style={"textAlign": "center"},
-                        )
-                    ]
-                )
+                html.Tr([
+                    html.Td(
+                        "Please add a server to monitor",
+                        colSpan=8,
+                        style={"textAlign": "center"},
+                    )
+                ])
             ]
-        return [no_update, ip_list, ip_data, rows]
+        return [no_update, ip_list, updated_ip_data, rows]
 
     return [no_update, no_update, no_update, no_update]
 
