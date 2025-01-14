@@ -31,7 +31,7 @@ To pull the latest Docker image and run the project, use the following commands:
 
 ```sh
 docker pull devops.telecomste.fr:5050/printerfaceadmin/2024-25/group1/printerfaceui:latest
-docker run -p 8050:8080 devops.telecomste.fr:5050/printerfaceadmin/2024-25/group1/printerfaceui:latest
+docker run -p 8050:8050 devops.telecomste.fr:5050/printerfaceadmin/2024-25/group1/printerfaceui:latest
 ```
 
 ## Local Setup
